@@ -206,7 +206,7 @@ export default function ChatInterface() {
 
         {loading && (
           <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
-            <div className="w-10 h-10 rounded-full bg-slate-900 flex items-center justify-center border border-border shadow-md hidden sm:flex">
+            <div className="w-10 h-10 rounded-full bg-slate-900 hidden sm:flex items-center justify-center border border-border shadow-md">
               <Bot size={20} className="text-primary" />
             </div>
             <div className="bg-secondary border border-border rounded-3xl rounded-tl-none p-4 md:p-5 flex items-center gap-3">
@@ -223,7 +223,7 @@ export default function ChatInterface() {
       <div className="p-3 md:p-6 md:px-20 bg-background/80 backdrop-blur-md border-t border-border shrink-0">
         <div className="max-w-5xl mx-auto relative group">
           <textarea
-            className="w-full bg-card border-2 border-border focus:border-primary/50 rounded-[2rem] md:rounded-4xl py-4 md:py-5 px-5 md:px-8 pr-28 md:pr-32 text-sm md:text-[15px] placeholder:text-muted-foreground/50 ring-0 focus:ring-4 focus:ring-primary/5 transition-all outline-none resize-none shadow-xl shadow-black/5 min-h-[60px] md:min-h-[72px] max-h-48"
+            className="w-full bg-card border-2 border-border focus:border-primary/50 rounded-4xl py-4 md:py-5 px-5 md:px-8 pr-28 md:pr-32 text-sm md:text-[15px] placeholder:text-muted-foreground/50 ring-0 focus:ring-4 focus:ring-primary/5 transition-all outline-none resize-none shadow-xl shadow-black/5 min-h-[60px] md:min-h-[72px] max-h-48"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {

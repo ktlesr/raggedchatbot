@@ -15,14 +15,33 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { signIn, signOut, useSession } from "next-auth/react";
+import { Session } from "next-auth";
+
+// Define a custom interface for the session user to include the 'role' property
+interface CustomSessionUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string; // Add the role property
+}
+
+// Extend the default Session interface
+interface CustomSession extends Session {
+  user?: CustomSessionUser;
+  expires: string;
+}
 
 export default function Navbar() {
   const { theme, setTheme } = useTheme();
-  const { data: session, status } = useSession();
-  const isAdmin = (session?.user as any)?.role === "admin";
+  // Use the custom session type
+  const { data: session, status } = useSession() as {
+    data: CustomSession | null;
+    status: "loading" | "authenticated" | "unauthenticated";
+  };
+  const isAdmin = session?.user?.role === "admin";
 
   return (
-    <nav className="h-12 border-b border-border bg-background/80 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-[100] transition-colors duration-300">
+    <nav className="h-14 border-b border-border bg-background/80 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-100 transition-colors duration-300">
       <div className="flex items-center gap-3">
         {/* Mobile Menu Button - Hidden on Desktop */}
         <button
@@ -65,9 +84,9 @@ export default function Navbar() {
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        {/* Theme Switcher Mini */}
-        <div className="flex items-center bg-secondary/50 rounded-lg p-0.5 border border-border">
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Theme Switcher Mini - Hidden on Mobile */}
+        <div className="hidden md:flex items-center bg-secondary/50 rounded-lg p-0.5 border border-border">
           <button
             onClick={() => setTheme("light")}
             className={cn(
@@ -106,18 +125,18 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="h-4 w-[1px] bg-border mx-1" />
+        <div className="hidden md:block h-4 w-px bg-border mx-1" />
 
         {/* Auth / Inventory */}
         {status === "authenticated" ? (
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             {isAdmin && (
               <Link
                 href="/admin"
                 className="flex items-center gap-1.5 text-[10px] font-bold text-primary hover:opacity-80 transition-opacity uppercase tracking-wider"
               >
                 <Package size={14} />
-                INVENTORY
+                <span className="hidden sm:inline">INVENTORY</span>
               </Link>
             )}
             <Link
@@ -125,23 +144,24 @@ export default function Navbar() {
               className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors uppercase tracking-wider"
             >
               <User size={14} />
-              PROFILE
+              <span className="hidden sm:inline">PROFILE</span>
             </Link>
             <button
               onClick={() => signOut()}
               className="flex items-center gap-1.5 text-[10px] font-bold text-destructive hover:opacity-80 transition-opacity uppercase tracking-wider"
             >
               <LogOut size={14} />
-              EXIT
+              <span className="hidden sm:inline">EXIT</span>
             </button>
           </div>
         ) : (
           <button
             onClick={() => signIn("google")}
-            className="flex items-center gap-2 bg-primary text-white text-[10px] font-bold px-3 py-1.5 rounded-lg hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95"
+            className="flex items-center gap-2 bg-primary text-white text-[10px] font-bold px-3 py-2 rounded-lg hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 whitespace-nowrap"
           >
             <LogIn size={13} />
-            LOGIN WITH GOOGLE
+            <span className="md:hidden">GİRİŞ</span>
+            <span className="hidden md:inline">LOGIN WITH GOOGLE</span>
           </button>
         )}
       </div>

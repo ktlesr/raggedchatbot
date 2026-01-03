@@ -172,7 +172,7 @@ export default function AdminPage() {
         {activeTab === "inventory" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="lg:col-span-2 space-y-8">
-              <div className="bg-card border border-border rounded-[2.5rem] p-6 md:p-12 shadow-xl shadow-black/5 relative overflow-hidden group">
+              <div className="bg-card border border-border rounded-4xl p-6 md:p-12 shadow-xl shadow-black/5 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
                 <div className="flex flex-col items-center text-center space-y-8">
                   <div className="space-y-2">
@@ -192,7 +192,7 @@ export default function AdminPage() {
                     />
                     <div
                       className={cn(
-                        "border-2 border-dashed rounded-[2.5rem] p-8 md:p-12 flex flex-col items-center justify-center transition-all",
+                        "border-2 border-dashed rounded-4xl p-8 md:p-12 flex flex-col items-center justify-center transition-all",
                         file
                           ? "bg-primary/5 border-primary/30"
                           : "bg-secondary/30 border-border",
@@ -261,7 +261,7 @@ export default function AdminPage() {
             </div>
 
             <div className="space-y-8">
-              <div className="bg-card border border-border rounded-[2rem] p-6 shadow-xl shadow-black/5 space-y-6">
+              <div className="bg-card border border-border rounded-4xl p-6 shadow-xl shadow-black/5 space-y-6">
                 <h3 className="font-bold flex items-center gap-2 text-sm uppercase tracking-wider opacity-60">
                   <History size={16} /> Sistem Özeti
                 </h3>
@@ -318,7 +318,7 @@ export default function AdminPage() {
 
         {activeTab === "users" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-card border border-border rounded-[2.5rem] overflow-x-auto shadow-xl shadow-black/5">
+            <div className="bg-card border border-border rounded-4xl overflow-x-auto shadow-xl shadow-black/5">
               <table className="w-full text-left min-w-[600px]">
                 <thead className="bg-secondary/50 border-b border-border">
                   <tr>
@@ -428,7 +428,7 @@ export default function AdminPage() {
               </div>
             ))}
             {(!adminData?.feedbacks || adminData.feedbacks.length === 0) && (
-              <div className="col-span-full py-12 text-center text-muted-foreground bg-secondary/20 rounded-[2rem] border border-dashed border-border">
+              <div className="col-span-full py-12 text-center text-muted-foreground bg-secondary/20 rounded-4xl border border-dashed border-border">
                 Henüz geri bildirim bulunmuyor.
               </div>
             )}
@@ -471,7 +471,7 @@ export default function AdminPage() {
               ].map((s, i) => (
                 <div
                   key={i}
-                  className="bg-card border border-border p-6 rounded-[2rem] shadow-sm space-y-3"
+                  className="bg-card border border-border p-6 rounded-4xl shadow-sm space-y-3"
                 >
                   <div className="flex items-center justify-between">
                     <div
@@ -495,7 +495,7 @@ export default function AdminPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Traffic Chart Mockup */}
-              <div className="bg-card border border-border rounded-[2.5rem] p-8 space-y-6">
+              <div className="bg-card border border-border rounded-4xl p-8 space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold flex items-center gap-2">
                     <TrendingUp size={18} className="text-primary" /> Kullanım
@@ -530,7 +530,7 @@ export default function AdminPage() {
               </div>
 
               {/* Integration Status Overlay */}
-              <div className="bg-card border border-border rounded-[2.5rem] p-8 flex flex-col justify-between">
+              <div className="bg-card border border-border rounded-4xl p-8 flex flex-col justify-between">
                 <div className="space-y-4 text-center py-6">
                   <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600 mx-auto">
                     <ShieldCheck size={32} />
