@@ -43,23 +43,23 @@ export default function Sidebar() {
   return (
     <div className="w-72 h-screen flex flex-col bg-card border-r border-border shrink-0 z-50 transition-colors duration-300">
       {/* Logo */}
-      <div className="p-6 flex items-center gap-3">
+      {/* <div className="p-6 flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <Bot size={24} />
+          <Bot size={14} />
         </div>
-        <span className="font-bold text-xl tracking-tight text-foreground">
+        <span className="font-bold text-md tracking-tight text-foreground">
           TESVİKSOR AI
         </span>
-      </div>
+      </div> */}
 
       {/* New Session Button */}
-      <div className="px-4 mb-6">
+      <div className="px-4 mb-6 mt-6">
         <button
           onClick={handleNewSession}
           className="w-full h-12 rounded-xl bg-slate-900 dark:bg-primary text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-[0.98] shadow-md"
         >
-          <Plus size={20} />
-          NEW SESSION
+          <Plus size={16} />
+          Yeni Sohbet
         </button>
       </div>
 
@@ -67,7 +67,7 @@ export default function Sidebar() {
       <div className="flex-1 overflow-y-auto px-4">
         <div className="mb-4">
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2">
-            RECENT MEMORY
+            Sohbet Geçmişi
           </span>
         </div>
         <div className="space-y-1">
@@ -121,22 +121,22 @@ export default function Sidebar() {
         <Link
           href="/chat"
           className={cn(
-            "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
+            "w-full h-11 px-4 rounded-xl flex items-center text-center gap-3 font-medium transition-all shadow-sm",
             pathname === "/chat"
-              ? "bg-primary text-white shadow-primary/20"
+              ? "bg-primary text-white text-center shadow-primary/20"
               : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
           )}
         >
           <MessageSquare size={20} />
-          CHAT
+          SOHBET
         </Link>
         {isAdmin && (
           <Link
             href="/admin"
             className={cn(
-              "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
+              "w-full h-11 px-4 rounded-xl flex items-center text-center gap-3 font-medium transition-all shadow-sm",
               pathname === "/admin"
-                ? "bg-primary text-white shadow-primary/20"
+                ? "bg-primary text-white text-center shadow-primary/20"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
             )}
           >
