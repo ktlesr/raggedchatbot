@@ -45,7 +45,7 @@ export async function GET() {
                 });
                 const embedding = embeddingResponse.data[0].embedding;
 
-                await storeEmbedding(chunk.id, chunk.text, chunk.metadata, embedding);
+                await storeEmbedding(chunk.id, chunk.text, { ...chunk.metadata, source: '9903_karar.pdf' }, embedding);
                 storedCount++;
             } catch (error) {
                 console.error(`Error storing chunk ${chunk.id}`, error);

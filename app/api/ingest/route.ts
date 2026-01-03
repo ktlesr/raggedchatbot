@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
             const embedding = embeddingResponse.data[0].embedding;
 
             // Store in Neon
-            await storeEmbedding(chunk.id, chunk.text, chunk.metadata, embedding);
+            await storeEmbedding(chunk.id, chunk.text, { ...chunk.metadata, source: fileName }, embedding);
         }
 
         return NextResponse.json({

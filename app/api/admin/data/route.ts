@@ -34,15 +34,23 @@ export async function GET(req: Request) {
     `;
 
         // Fetch some basic stats (count of documents from RAG table)
-        const docStats = await sql`SELECT COUNT(DISTINCT(metadata->>'source')) as count FROM rag_documents`;
-        const chunkStats = await sql`SELECT COUNT(*) as count FROM rag_documents`;
+        const docCountResult = await sql`SELECT COUNT(DISTINCT(metadata->>'source')) as count FROM rag_documents`;
+        const chunkCountResult = await sql`SELECT COUNT(*) as count FROM rag_documents`;
+
+        const totalChunks = parseInt(chunkCountResult[0].count);
+        let totalDocs = parseInt(docCountResult[0].count);
+
+        // Fallback: If we have chunks but 0 distinct sources (pre-metadata update), count it as 1 doc
+        if (totalChunks > 0 && totalDocs === 0) {
+            totalDocs = 1;
+        }
 
         return NextResponse.json({
             users,
             feedbacks,
             stats: {
-                totalDocs: docStats[0].count,
-                totalChunks: chunkStats[0].count,
+                totalDocs,
+                totalChunks,
                 totalUsers: users.length,
                 totalFeedback: feedbacks.length
             }

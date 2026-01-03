@@ -22,15 +22,36 @@ export default function Navbar() {
   const isAdmin = (session?.user as any)?.role === "admin";
 
   return (
-    <nav className="h-12 border-b border-border bg-background/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-[100] transition-colors duration-300">
-      <div className="flex items-center gap-6">
+    <nav className="h-12 border-b border-border bg-background/80 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-[100] transition-colors duration-300">
+      <div className="flex items-center gap-3">
+        {/* Mobile Menu Button - Hidden on Desktop */}
+        <button
+          className="p-2 -ml-2 hover:bg-secondary rounded-lg md:hidden"
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("toggle-sidebar"))
+          }
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+
         <Link href="/" className="flex items-center gap-2 group">
           <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
             <span className="font-bold text-xs">T</span>
           </div>
-          <span className="font-bold text-sm tracking-tight hidden sm:inline-block">
-            TESVİKSOR AI
-          </span>
+          <span className="font-bold text-sm tracking-tight">TESVİKSOR AI</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-4">
