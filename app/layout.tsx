@@ -78,7 +78,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CaptchaProvider>
+          <CaptchaProvider siteKey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}>
             <AuthProvider>
               <MainLayout>{children}</MainLayout>
             </AuthProvider>
