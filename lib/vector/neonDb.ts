@@ -1,14 +1,18 @@
 
 import { neon } from '@neondatabase/serverless';
 
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not defined');
+function getSql() {
+  if (!process.env.DATABASE_URL) {
+    // We only throw if we are actually trying to use the DB
+    throw new Error('DATABASE_URL is not defined. Please set it in your environment variables.');
+  }
+  return neon(process.env.DATABASE_URL);
 }
-
-const sql = neon(process.env.DATABASE_URL);
 
 // Function to store embeddings
 export async function storeEmbedding(id: string, text: string, metadata: any, embedding: number[]) {
+  const sql = getSql();
+
   // Ensure extension and table exist
   await sql`CREATE EXTENSION IF NOT EXISTS vector`;
 
@@ -34,6 +38,7 @@ export async function storeEmbedding(id: string, text: string, metadata: any, em
 
 // Function to search similar documents
 export async function searchSimilarDocuments(embedding: number[], topK: number = 5) {
+  const sql = getSql();
   const vectorStr = JSON.stringify(embedding);
 
   // Cosine similarity search using pgvector (<=> is distance, so ORDER BY ASC)
