@@ -228,16 +228,14 @@ export default function LoginPage() {
               <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full h-12 bg-secondary/50 dark:bg-white/5 border border-border hover:bg-secondary/80 dark:hover:bg-white/10 text-foreground font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
+                className="w-full h-12 bg-white dark:bg-slate-900 border border-border hover:border-primary/50 text-foreground font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
               >
                 <img
                   src="https://www.google.com/favicon.ico"
                   className="w-4 h-4"
                   alt="Google"
                 />
-                <span className="opacity-90 uppercase tracking-tight">
-                  GOOGLE İLE DEVAM ET
-                </span>
+                GOOGLE İLE DEVAM ET
               </button>
             </div>
 
@@ -248,25 +246,14 @@ export default function LoginPage() {
             )}
 
             <div className="pt-4 flex flex-col items-center gap-4 w-full">
-              <div className="flex flex-col items-center gap-2">
-                <button
-                  onClick={() => setIsRegistering(!isRegistering)}
-                  className="text-primary hover:underline font-bold text-xs transition-all"
-                >
-                  {isRegistering
-                    ? "Zaten hesabınız var mı? Giriş yapın"
-                    : "Hesabınız yok mu? Hemen üye olun"}
-                </button>
-
-                {!isRegistering && (
-                  <button
-                    onClick={() => router.push("/chat")}
-                    className="text-muted-foreground hover:text-foreground font-medium text-[11px] transition-all underline underline-offset-4"
-                  >
-                    Üye olmadan devam et
-                  </button>
-                )}
-              </div>
+              <button
+                onClick={() => setIsRegistering(!isRegistering)}
+                className="text-primary hover:underline font-bold text-xs transition-all"
+              >
+                {isRegistering
+                  ? "Zaten hesabınız var mı? Giriş yapın"
+                  : "Hesabınız yok mu? Hemen üye olun"}
+              </button>
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-medium uppercase tracking-tighter opacity-70">
                 <ShieldCheck size={12} className="text-emerald-500" />
