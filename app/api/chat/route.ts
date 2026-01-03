@@ -155,7 +155,7 @@ ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
 
         if (activeModel.startsWith("gpt-")) {
             const completion = await openai.chat.completions.create({
-                model: activeModel as any,
+                model: activeModel as string,
                 messages: [
                     { role: "system", content: systemPrompt },
                     { role: "user", content: message }

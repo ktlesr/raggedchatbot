@@ -44,7 +44,7 @@ const handler = NextAuth({
                     name: user.name,
                     email: user.email,
                     role: user.role,
-                } as any;
+                } as CustomUser;
             },
         }),
     ],

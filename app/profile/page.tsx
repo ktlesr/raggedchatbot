@@ -12,6 +12,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
+interface CustomUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+}
+
 export default function ProfilePage() {
   const { data: session } = useSession();
   const [feedback, setFeedback] = useState("");
@@ -38,7 +45,7 @@ export default function ProfilePage() {
       } else {
         setStatus("error");
       }
-    } catch (err) {
+    } catch {
       setStatus("error");
     } finally {
       setSending(false);
@@ -87,7 +94,7 @@ export default function ProfilePage() {
                 <Mail size={14} /> {session.user?.email}
               </span>
               <span className="flex items-center gap-1.5 uppercase font-bold tracking-widest text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded">
-                {(session.user as any)?.role || "USER"}
+                {(session.user as CustomUser)?.role || "USER"}
               </span>
             </div>
           </div>
@@ -96,7 +103,9 @@ export default function ProfilePage() {
         {/* Feedback Section */}
         <div className="bg-card border border-border rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-black/5 space-y-8">
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold">Admin'e Geri Bildirim Gönder</h2>
+            <h2 className="text-2xl font-bold">
+              Admin&apos;e Geri Bildirim Gönder
+            </h2>
             <p className="text-sm text-muted-foreground">
               Sistem hakkında önerilerinizi, şikayetlerinizi veya yeni mevzuat
               taleplerinizi buradan iletebilirsiniz.

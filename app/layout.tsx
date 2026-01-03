@@ -19,8 +19,46 @@ import { CaptchaProvider } from "@/components/CaptchaProvider";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
-  title: "TESVİKSOR AI - Yatırım Teşvik Rehberi",
-  description: "Yatırım Teşvik Mevzuatı Analiz Sistemi",
+  title: {
+    default: "TESVİKSOR AI - Yatırım Teşvik Rehberi",
+    template: "%s | TESVİKSOR AI",
+  },
+  description:
+    "Yatırım Teşvik Mevzuatı Analiz Sistemi. Yapay zeka destekli yatırım teşvik rehberi ve mevzuat analizi.",
+  keywords: [
+    "yatırım teşvik",
+    "mevzuat analizi",
+    "AI rehber",
+    "teşvik robotu",
+    "Türkiye yatırım teşvikleri",
+    "yapay zeka danışman",
+  ],
+  authors: [{ name: "TESVİKSOR AI Team" }],
+  creator: "TESVİKSOR AI",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    url: "https://tesviksor.ai", // Replace with real domain if different
+    title: "TESVİKSOR AI - Yatırım Teşvik Rehberi",
+    description:
+      "Yapay zeka ile yatırım teşvik mevzuatını saniyeler içinde analiz edin.",
+    siteName: "TESVİKSOR AI",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "TESVİKSOR AI - Yatırım Teşvik Rehberi",
+    description:
+      "Yapay zeka ile yatırım teşvik mevzuatını saniyeler içinde analiz edin.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
