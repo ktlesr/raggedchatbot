@@ -1,0 +1,164 @@
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
+import { normalizeTurkish } from "@/lib/utils/text";
+import { searchSimilarDocuments } from "@/lib/vector/neonDb";
+import { neon } from "@neondatabase/serverless";
+
+// --- Types ---
+interface SearchResult {
+    id: string;
+    content: string;
+    similarity?: number;
+}
+
+// 1. Get Embedding from OpenAI
+async function getEmbedding(text: string, openai: OpenAI): Promise<number[]> {
+    const response = await openai.embeddings.create({
+        model: "text-embedding-3-small",
+        input: normalizeTurkish(text).replace(/\n/g, " "),
+    });
+    return response.data[0].embedding;
+}
+
+// 2. Find Relevant Chunks (Hybrid Search)
+async function findRelevantContext(query: string, openai: OpenAI): Promise<string> {
+    const sql = neon(process.env.DATABASE_URL!);
+    const normalizedQuery = normalizeTurkish(query);
+
+    // A. Vector Search
+    const queryEmbedding = await getEmbedding(query, openai);
+    let vectorResults: SearchResult[] = [];
+    try {
+        const results = await searchSimilarDocuments(queryEmbedding, 20);
+        vectorResults = results.map((r: Record<string, unknown>) => ({
+            id: r.id as string,
+            content: r.content as string,
+            similarity: r.similarity as number
+        }));
+    } catch (e) {
+        console.error("Vector search failed", e);
+    }
+
+    // B. Specific Article Lookup
+    const maddeMatch = query.match(/madde\s*(\d+)/i);
+    let directHits: SearchResult[] = [];
+
+    if (maddeMatch) {
+        const maddeNo = maddeMatch[1];
+        try {
+            const safeMaddeNo = maddeNo.replace(/\s+/g, '_');
+            const rows = await sql`
+                SELECT id, content 
+                FROM rag_documents 
+                WHERE id = ${`madde_${safeMaddeNo}`} 
+                   OR id LIKE ${`madde_${safeMaddeNo}_p_%`}
+                   OR id LIKE ${`madde_Geçici_${safeMaddeNo}%`}
+                LIMIT 15;
+            `;
+            directHits = rows.map((r: Record<string, unknown>) => ({
+                id: r.id as string,
+                content: r.content as string
+            }));
+        } catch (e) {
+            console.error("Direct hit search failed", e);
+        }
+    }
+
+    // C. Keyword Search
+    let keywordHits: SearchResult[] = [];
+    const keywords = ["vergi", "indirim", "muafiyet", "teşvik", "kdv", "faiz", "destek"];
+    const foundKeywords = keywords.filter(k => normalizedQuery.includes(k));
+
+    if (foundKeywords.length > 0 || (vectorResults.length > 0 && (vectorResults[0].similarity || 0) < 0.35)) {
+        try {
+            const primaryKeyword = foundKeywords[0] || normalizedQuery.split(' ')[0];
+            const rows = await sql`
+                SELECT id, content 
+                FROM rag_documents 
+                WHERE content ILIKE ${`%${primaryKeyword}%`}
+                ORDER BY length(content) ASC
+                LIMIT 10;
+            `;
+            keywordHits = rows.map((r: Record<string, unknown>) => ({
+                id: r.id as string,
+                content: r.content as string
+            }));
+        } catch (e) {
+            console.error("Keyword search failed", e);
+        }
+    }
+
+    // D. Combine
+    const combined = [...directHits, ...vectorResults, ...keywordHits];
+    const seen = new Set<string>();
+    const uniqueResults: SearchResult[] = [];
+
+    for (const r of combined) {
+        if (!seen.has(r.id)) {
+            seen.add(r.id);
+            uniqueResults.push(r);
+        }
+    }
+
+    if (uniqueResults.length === 0) return "";
+    return uniqueResults.map((r) => r.content).join("\n\n---\n\n");
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const body = (await req.json()) as { message?: string };
+        const message = body.message;
+
+        if (!message) {
+            return NextResponse.json({ error: "Message is required" }, { status: 400 });
+        }
+
+        if (!process.env.OPENAI_API_KEY) {
+            return NextResponse.json({ reply: "OpenAI API Key eksik." });
+        }
+
+        const openai = new OpenAI();
+        const normalizedMessage = normalizeTurkish(message);
+        const isCorrection = /(yanlış|hatalı|öyle değil|hayır|emin misin|doğru değil|bilmiyorsun)/i.test(normalizedMessage);
+
+        const context = await findRelevantContext(message, openai);
+
+        if (isCorrection) {
+            console.log("Correction detected, focusing search...");
+            // Extra logic could be added here if needed
+        }
+
+        const systemPrompt = `Sen uzman bir Yatırım Teşvik Mevzuatı Danışmanısın.
+Adın: Teşvik Asistanı.
+Görevin: Kullanıcının yatırım teşvikleri hakkındaki sorularını yanıtlamak.
+
+Kural 1: Öncelikle verilen [BAĞLAM] bilgisini kullanarak yanıt ver. 
+Kural 2: Bağlamdaki terimler ile kullanıcının sorduğu terimler arasında anlamca benzerlik varsa bunu kabul et.
+Kural 3: Bilgi yoksa, kestirip atma, yapıcı bir yanıt ver. "Bilgim yok" deme.
+Kural 4: Yanıtların resmi olsun.
+Kural 5: ÇIKTI FORMATI: Yanıtlarını her zaman Markdown formatında yapılandır. 
+    - Maddeleri (bullet points) veya liste numaralarını alt alta ve okunaklı yaz. 
+    - Önemli terimleri **kalın (bold)** yap.
+    - İçeriği paragraflara böl. 
+    - Listeleri asla tek satırda (inline) verme, her madde yeni bir satırda olsun.
+
+[BAĞLAM]
+${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
+`;
+
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: message }
+            ],
+            temperature: 0.3,
+        });
+
+        return NextResponse.json({ reply: completion.choices[0].message.content });
+
+    } catch (error: unknown) {
+        console.error("Chat Error:", error);
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
+    }
+}
