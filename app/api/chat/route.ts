@@ -4,6 +4,8 @@ import { normalizeTurkish } from "@/lib/utils/text";
 import { searchSimilarDocuments } from "@/lib/vector/neonDb";
 import { neon } from "@neondatabase/serverless";
 
+export const dynamic = 'force-dynamic';
+
 // --- Types ---
 interface SearchResult {
     id: string;

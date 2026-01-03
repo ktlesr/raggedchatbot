@@ -1,5 +1,8 @@
 
 import { NextResponse } from "next/server";
+
+export const dynamic = 'force-dynamic';
+
 import { getServerSession } from "next-auth/next";
 import { neon } from "@neondatabase/serverless";
 
