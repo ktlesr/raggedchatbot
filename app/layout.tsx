@@ -16,6 +16,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import MainLayout from "@/components/MainLayout";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { CaptchaProvider } from "@/components/CaptchaProvider";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
   title: "TESVİKSOR AI - Yatırım Teşvik Rehberi",
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <GoogleAnalytics />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
