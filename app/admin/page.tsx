@@ -223,7 +223,10 @@ export default function AdminPage() {
                     <input
                       type="file"
                       className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                      onChange={(e) => setFile(e.target.files?.[0] || null)}
+                      onChange={(e) => {
+                        setFile(e.target.files?.[0] || null);
+                        setResult(null); // Reset result on new file selection
+                      }}
                       accept=".pdf"
                     />
                     <div
