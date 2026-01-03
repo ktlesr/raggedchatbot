@@ -12,6 +12,7 @@ import {
   Package,
   User,
   MessageSquare,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { signIn, signOut, useSession } from "next-auth/react";
@@ -41,7 +42,7 @@ export default function Navbar() {
   const isAdmin = session?.user?.role === "admin";
 
   return (
-    <nav className="h-14 border-b border-border bg-background/80 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-100 transition-colors duration-300">
+    <nav className="h-16 border-b border-border bg-background/80 backdrop-blur-md px-4 md:px-6 flex items-center justify-between sticky top-0 z-100 transition-colors duration-300">
       <div className="flex items-center gap-3">
         {/* Mobile Menu Button - Hidden on Desktop */}
         <button
@@ -51,8 +52,8 @@ export default function Navbar() {
           }
         >
           <svg
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -66,14 +67,16 @@ export default function Navbar() {
           </svg>
         </button>
 
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-            <span className="font-bold text-xs">T</span>
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+            <Bot size={22} />
           </div>
-          <span className="font-bold text-sm tracking-tight">TESVİKSOR AI</span>
+          <span className="font-bold text-lg md:text-xl tracking-tight text-foreground">
+            TESVİKSOR AI
+          </span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-4 ml-2">
           <Link
             href="/chat"
             className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"

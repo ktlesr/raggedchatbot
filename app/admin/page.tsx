@@ -17,6 +17,8 @@ import {
   Globe,
   ArrowUpRight,
   ExternalLink,
+  Settings,
+  BrainCircuit,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useSession } from "next-auth/react";
@@ -35,15 +37,35 @@ interface IngestResult {
   stats?: Stats;
 }
 
-type Tab = "inventory" | "users" | "feedback" | "stats";
+type Tab = "inventory" | "users" | "feedback" | "stats" | "settings";
+
+interface CustomSessionUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+}
+
+interface AdminData {
+  users: any[];
+  feedbacks: any[];
+  settings: {
+    activeModel: string;
+  };
+  stats: {
+    totalDocs: number;
+    totalChunks: number;
+    totalUsers: number;
+    totalFeedback: number;
+  };
+}
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("inventory");
-  const [adminData, setAdminData] = useState<any>(null);
+  const [adminData, setAdminData] = useState<AdminData | null>(null);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
-  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   // Inventory state
   const [file, setFile] = useState<File | null>(null);
@@ -55,7 +77,7 @@ export default function AdminPage() {
       router.push("/login");
     } else if (
       status === "authenticated" &&
-      (session?.user as any)?.role !== "admin"
+      (session?.user as CustomSessionUser)?.role !== "admin"
     ) {
       router.push("/profile");
     }
@@ -76,7 +98,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (
       status === "authenticated" &&
-      (session?.user as any)?.role === "admin"
+      (session?.user as CustomSessionUser)?.role === "admin"
     ) {
       fetchData();
       fetchAnalytics();
@@ -84,7 +106,6 @@ export default function AdminPage() {
   }, [status, session]);
 
   const fetchAnalytics = async () => {
-    setLoadingAnalytics(true);
     try {
       const res = await fetch("/api/admin/analytics");
       const data = await res.json();
@@ -93,8 +114,6 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error("Fetch analytics error:", err);
-    } finally {
-      setLoadingAnalytics(false);
     }
   };
 
@@ -166,6 +185,7 @@ export default function AdminPage() {
             { id: "users", icon: Users, label: "Kullanıcılar" },
             { id: "feedback", icon: MessageSquare, label: "Geri Bildirim" },
             { id: "stats", icon: BarChart3, label: "Analiz" },
+            { id: "settings", icon: Settings, label: "Ayarlar" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -611,7 +631,123 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+        {activeTab === "settings" && (
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto space-y-8">
+            <div className="bg-card border border-border rounded-4xl p-8 shadow-xl shadow-black/5 space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <BrainCircuit size={28} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">
+                    Yapay Zeka Modeli Ayarları
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Chatbot yanıtları için aktif modeli seçin.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  {
+                    id: "gpt-4o",
+                    name: "GPT-4o",
+                    provider: "OpenAI",
+                    desc: "En güçlü ve dengeli model.",
+                  },
+                  {
+                    id: "gpt-4o-mini",
+                    name: "GPT-4o Mini",
+                    provider: "OpenAI",
+                    desc: "Hızlı ve ekonomik.",
+                  },
+                  {
+                    id: "gemini-2.0-flash",
+                    name: "Gemini 2.0 Flash",
+                    provider: "Google",
+                    desc: "Yeni nesil hız ve performans.",
+                  },
+                  {
+                    id: "gemini-1.5-pro",
+                    name: "Gemini 1.5 Pro",
+                    provider: "Google",
+                    desc: "Geniş bağlam ve derin analiz.",
+                  },
+                  {
+                    id: "gemini-1.5-flash",
+                    name: "Gemini 1.5 Flash",
+                    provider: "Google",
+                    desc: "Hızlı ve verimli.",
+                  },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => updateSetting("active_model", m.id)}
+                    className={cn(
+                      "flex flex-col items-start p-5 rounded-3xl border-2 transition-all text-left group",
+                      adminData?.settings?.activeModel === m.id
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-border hover:border-primary/30 bg-secondary/20",
+                    )}
+                  >
+                    <div className="flex items-center justify-between w-full mb-2">
+                      <span className="font-bold text-lg">{m.name}</span>
+                      <span
+                        className={cn(
+                          "text-[10px] font-bold px-2 py-0.5 rounded-full",
+                          m.provider === "OpenAI"
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-blue-500/10 text-blue-600",
+                        )}
+                      >
+                        {m.provider}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{m.desc}</p>
+                    {adminData?.settings?.activeModel === m.id && (
+                      <div className="mt-4 flex items-center gap-2 text-primary text-[10px] font-bold uppercase tracking-wider">
+                        <CheckCircle size={12} /> Aktif Model
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-destructive/5 border border-destructive/20 rounded-4xl p-8 flex items-center gap-6">
+              <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h4 className="font-bold text-destructive">Dikkat</h4>
+                <p className="text-sm text-destructive/80 leading-relaxed">
+                  Model değişikliği anında tüm kullanıcılar için geçerli olur.
+                  Mevcut 1536 vektör boyutu korunur; OpenAI embeddings
+                  kullanılmaya devam edilir. Yanıt kalitesi modelden modele
+                  farklılık gösterebilir.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+// Add updateSetting helper to component scope
+const updateSetting = async (key: string, value: string) => {
+  try {
+    const res = await fetch("/api/admin/data", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "setting", key, value }),
+    });
+    if (res.ok) {
+      window.location.reload(); // Quick refresh to update state
+    }
+  } catch (err) {
+    console.error("Update setting error:", err);
+  }
+};

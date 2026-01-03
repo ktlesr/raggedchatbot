@@ -1,5 +1,6 @@
 
 import { NextResponse } from "next/server";
+import { getActiveModel, setActiveModel } from "@/lib/utils/settings";
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +46,14 @@ export async function GET(req: Request) {
             totalDocs = 1;
         }
 
+        const activeModel = await getActiveModel();
+
         return NextResponse.json({
             users,
             feedbacks,
+            settings: {
+                activeModel
+            },
             stats: {
                 totalDocs,
                 totalChunks,
@@ -67,12 +73,21 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { userId, role } = await req.json();
+        const { userId, role, type, key, value } = await req.json();
+        const sql = neon(process.env.DATABASE_URL!);
+
+        if (type === "setting") {
+            if (!key || !value) return NextResponse.json({ error: "Missing data" }, { status: 400 });
+            if (key === "active_model") {
+                await setActiveModel(value);
+            }
+            return NextResponse.json({ success: true });
+        }
+
         if (!userId || !role) {
             return NextResponse.json({ error: "Missing data" }, { status: 400 });
         }
 
-        const sql = neon(process.env.DATABASE_URL!);
         await sql`UPDATE users SET role = ${role} WHERE id = ${userId}`;
 
         return NextResponse.json({ success: true });

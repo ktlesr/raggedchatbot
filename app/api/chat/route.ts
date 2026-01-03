@@ -3,6 +3,8 @@ import OpenAI from "openai";
 import { normalizeTurkish } from "@/lib/utils/text";
 import { searchSimilarDocuments } from "@/lib/vector/neonDb";
 import { neon } from "@neondatabase/serverless";
+import { getActiveModel } from "@/lib/utils/settings";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export const dynamic = 'force-dynamic';
 
@@ -148,16 +150,35 @@ Kural 5: ÇIKTI FORMATI: Yanıtlarını her zaman Markdown formatında yapıland
 ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
 `;
 
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: message }
-            ],
-            temperature: 0.3,
-        });
+        const activeModel = await getActiveModel();
+        let reply = "";
 
-        return NextResponse.json({ reply: completion.choices[0].message.content });
+        if (activeModel.startsWith("gpt-")) {
+            const completion = await openai.chat.completions.create({
+                model: activeModel as any,
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: message }
+                ],
+                temperature: 0.3,
+            });
+            reply = completion.choices[0].message.content || "";
+        } else if (activeModel.startsWith("gemini-")) {
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "");
+            const model = genAI.getGenerativeModel({ model: activeModel });
+
+            const result = await model.generateContent({
+                contents: [
+                    { role: "user", parts: [{ text: systemPrompt + "\n\nKullanıcı Sorusu: " + message }] }
+                ],
+                generationConfig: {
+                    temperature: 0.3,
+                }
+            });
+            reply = result.response.text();
+        }
+
+        return NextResponse.json({ reply });
 
     } catch (error: unknown) {
         console.error("Chat Error:", error);
