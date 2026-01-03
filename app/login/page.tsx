@@ -228,14 +228,16 @@ export default function LoginPage() {
               <button
                 onClick={handleGoogleLogin}
                 disabled={loading}
-                className="w-full h-12 bg-white dark:bg-slate-800 border border-border hover:border-primary/50 text-slate-900 dark:text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
+                className="w-full h-12 bg-secondary/50 dark:bg-white/5 border border-border hover:bg-secondary/80 dark:hover:bg-white/10 text-foreground font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
               >
                 <img
                   src="https://www.google.com/favicon.ico"
                   className="w-4 h-4"
                   alt="Google"
                 />
-                GOOGLE İLE DEVAM ET
+                <span className="opacity-90 uppercase tracking-tight">
+                  GOOGLE İLE DEVAM ET
+                </span>
               </button>
             </div>
 
