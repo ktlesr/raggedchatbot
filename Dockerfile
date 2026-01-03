@@ -32,13 +32,16 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+# Set the correct permission for prerender cache and data storage
+RUN mkdir -p .next data/raw data/parsed
+RUN chown -R nextjs:nodejs .next data
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Ensure data directories exist in standalone too (they might be excluded)
+RUN mkdir -p data/raw data/parsed && chown -R nextjs:nodejs data
 
 USER nextjs
 

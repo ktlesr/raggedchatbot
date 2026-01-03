@@ -24,8 +24,11 @@ export async function POST(req: NextRequest) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
         const fileName = file.name.replace(/\s+/g, "_");
-        const tempPath = path.join(process.cwd(), "data/raw", fileName);
+        const rawDir = path.join(process.cwd(), "data/raw");
+        const tempPath = path.join(rawDir, fileName);
 
+        // Ensure directory exists
+        await import("fs/promises").then(fs => fs.mkdir(rawDir, { recursive: true }));
         await writeFile(tempPath, buffer);
 
         // 1. Parse Text
@@ -43,7 +46,9 @@ export async function POST(req: NextRequest) {
         const chunks = createChunks(structure);
 
         // Save structured JSON for reference
-        const jsonPath = path.join(process.cwd(), "data/parsed", `${fileName}.json`);
+        const parsedDir = path.join(process.cwd(), "data/parsed");
+        const jsonPath = path.join(parsedDir, `${fileName}.json`);
+        await import("fs/promises").then(fs => fs.mkdir(parsedDir, { recursive: true }));
         await writeFile(jsonPath, JSON.stringify(structure, null, 2));
 
         // 4. Generate Embeddings & Store in DB
@@ -79,8 +84,9 @@ export async function POST(req: NextRequest) {
             }
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Ingest Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Internal Server Error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
