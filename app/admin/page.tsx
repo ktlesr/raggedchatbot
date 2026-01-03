@@ -15,8 +15,6 @@ import {
   BarChart3,
   TrendingUp,
   Globe,
-  MousePointer2,
-  Clock,
   ArrowUpRight,
   ExternalLink,
 } from "lucide-react";
@@ -441,32 +439,32 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
               {[
                 {
-                  label: "Aktif Kullanıcı (Anlık)",
-                  val: "14",
-                  icon: TrendingUp,
+                  label: "Aktif Kullanıcılar",
+                  val: adminData?.stats?.totalUsers || 0,
+                  icon: Users,
                   color: "text-emerald-500",
-                  sub: "+3 son 1 saat",
+                  sub: "Veritabanı Kayıtlı",
                 },
                 {
-                  label: "Oturum Süresi",
-                  val: "4:24",
-                  icon: Clock,
+                  label: "Toplama Sorgu",
+                  val: "Simüle Ediliyor",
+                  icon: TrendingUp,
                   color: "text-blue-500",
-                  sub: "Ortalama",
+                  sub: "GA4 API Gerekli",
                 },
                 {
-                  label: "Tıklama Oranı",
-                  val: "%12.4",
-                  icon: MousePointer2,
+                  label: "Geri Bildirimler",
+                  val: adminData?.stats?.totalFeedback || 0,
+                  icon: MessageSquare,
                   color: "text-purple-500",
-                  sub: "Genel Ort.",
+                  sub: "Kullanıcı Mesajları",
                 },
                 {
-                  label: "Yeni Kullanıcı",
-                  val: "128",
+                  label: "Yeni Kullanıcı (Haftalık)",
+                  val: "1",
                   icon: Globe,
                   color: "text-orange-500",
-                  sub: "Bu hafta",
+                  sub: "Son 7 Gün",
                 },
               ].map((s, i) => (
                 <div
