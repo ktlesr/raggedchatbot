@@ -12,9 +12,15 @@ export async function POST(req: Request) {
         }
 
         // reCAPTCHA verification
-        const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${captchaToken}`;
-        const captchaRes = await fetch(verifyUrl, { method: "POST" });
+        const secretKey = process.env.RECAPTCHA_SECRET_KEY?.trim();
+        const captchaRes = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                secret: secretKey || "",
+                response: captchaToken,
+            }).toString(),
+        });
         const captchaData = await captchaRes.json();
 
         if (!captchaData.success || captchaData.score < 0.5) {
@@ -38,8 +44,8 @@ export async function POST(req: Request) {
     `;
 
         return NextResponse.json({ success: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Register Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
     }
 }

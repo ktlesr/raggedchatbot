@@ -39,7 +39,9 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     try {
+      console.log("Executing reCAPTCHA for action:", actionName);
       const token = await executeRecaptcha(actionName);
+      console.log("reCAPTCHA token received:", token ? "YES" : "NO");
 
       const verifyRes = await fetch("/api/auth/verify-captcha", {
         method: "POST",
@@ -47,6 +49,7 @@ export default function LoginPage() {
         body: JSON.stringify({ token }),
       });
       const verifyData = await verifyRes.json();
+      console.log("Verification response:", verifyData);
 
       if (!verifyRes.ok || !verifyData.success) {
         setError("Güvenlik doğrulaması başarısız oldu.");
@@ -56,6 +59,7 @@ export default function LoginPage() {
 
       await callback(token);
     } catch (err: unknown) {
+      console.error("reCAPTCHA Error:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Bir hata oluştu.";
       setError(errorMessage);
