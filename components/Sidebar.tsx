@@ -15,8 +15,7 @@ import {
 import { useSessions } from "@/lib/context/SessionContext";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils/cn";
-import { useAuth } from "@/lib/context/AuthContext";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -31,7 +30,6 @@ export default function Sidebar() {
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.role === "admin";
-  const { logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -121,27 +119,27 @@ export default function Sidebar() {
         <Link
           href="/chat"
           className={cn(
-            "w-full h-11 px-4 rounded-xl flex items-center text-center gap-3 font-medium transition-all shadow-sm",
+            "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
             pathname === "/chat"
               ? "bg-primary text-white text-center shadow-primary/20"
               : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
           )}
         >
           <MessageSquare size={20} />
-          SOHBET
+          Sohbete Git
         </Link>
         {isAdmin && (
           <Link
             href="/admin"
             className={cn(
-              "w-full h-11 px-4 rounded-xl flex items-center text-center gap-3 font-medium transition-all shadow-sm",
+              "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
               pathname === "/admin"
                 ? "bg-primary text-white text-center shadow-primary/20"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
             )}
           >
             <Package size={20} />
-            INVENTORY
+            Admin Paneli
           </Link>
         )}
       </div>
@@ -173,12 +171,7 @@ export default function Sidebar() {
             </p>
           </div>
           <button
-            onClick={() => {
-              if (logout) logout();
-              else {
-                import("next-auth/react").then(({ signOut }) => signOut());
-              }
-            }}
+            onClick={() => signOut({ callbackUrl: "/login" })}
             className="text-muted-foreground hover:text-destructive p-1 transition-colors"
           >
             <LogOutIcon size={18} />

@@ -15,7 +15,7 @@ import {
   Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Session } from "next-auth";
 
 // Define a custom interface for the session user to include the 'role' property
@@ -158,14 +158,14 @@ export default function Navbar() {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => signIn("google")}
+          <Link
+            href="/login"
             className="flex items-center gap-2 bg-primary text-white text-[10px] font-bold px-3 py-2 rounded-lg hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 whitespace-nowrap"
           >
             <LogIn size={13} />
             <span className="md:hidden">GİRİŞ</span>
-            <span className="hidden md:inline">LOGIN WITH GOOGLE</span>
-          </button>
+            <span className="hidden md:inline">LOGIN / ÜYE OL</span>
+          </Link>
         )}
       </div>
     </nav>
