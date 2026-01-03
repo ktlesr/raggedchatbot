@@ -14,10 +14,11 @@ import {
 } from "lucide-react";
 import { useSessions } from "@/lib/context/SessionContext";
 import { useTheme } from "next-themes";
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { useAuth } from "@/lib/context/AuthContext";
+import { useSession } from "next-auth/react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function Sidebar() {
   const {
@@ -28,6 +29,8 @@ export default function Sidebar() {
     deleteSession,
   } = useSessions();
   const { theme, setTheme } = useTheme();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "admin";
   const { logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -127,36 +130,55 @@ export default function Sidebar() {
           <MessageSquare size={20} />
           CHAT
         </Link>
-        <Link
-          href="/admin"
-          className={cn(
-            "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
-            pathname === "/admin"
-              ? "bg-primary text-white shadow-primary/20"
-              : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
-          )}
-        >
-          <Package size={20} />
-          INVENTORY
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={cn(
+              "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
+              pathname === "/admin"
+                ? "bg-primary text-white shadow-primary/20"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
+            )}
+          >
+            <Package size={20} />
+            INVENTORY
+          </Link>
+        )}
       </div>
 
       {/* User & Theme Footer */}
       <div className="p-4 bg-secondary/30 border-t border-border">
         <div className="flex items-center gap-3 p-2 rounded-xl bg-card border border-border">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-inner">
-            K
-          </div>
+          {session?.user?.image ? (
+            <img
+              src={session.user.image}
+              alt={session.user.name || "User"}
+              className="w-10 h-10 rounded-full object-cover border border-border"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-inner uppercase">
+              {session?.user?.name?.[0] || session?.user?.email?.[0] || "U"}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold truncate text-foreground">
-              ADMIN@TESVIKSOR.AI
+              {session?.user?.name ||
+                session?.user?.email?.split("@")[0] ||
+                "Giriş Yapılmadı"}
             </p>
             <p className="text-[10px] text-emerald-500 font-bold tracking-tight uppercase">
-              NEON READY
+              {(session?.user as any)?.role === "admin"
+                ? "YÖNETİCİ"
+                : "AKTİF KULLANICI"}
             </p>
           </div>
           <button
-            onClick={logout}
+            onClick={() => {
+              if (logout) logout();
+              else {
+                import("next-auth/react").then(({ signOut }) => signOut());
+              }
+            }}
             className="text-muted-foreground hover:text-destructive p-1 transition-colors"
           >
             <LogOutIcon size={18} />

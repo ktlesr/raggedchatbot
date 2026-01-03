@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   MessageSquare,
   Package,
-  Search,
   ArrowRight,
   Bot,
   Zap,
@@ -15,10 +14,13 @@ import {
 import { useSessions } from "@/lib/context/SessionContext";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
+import { useSession } from "next-auth/react";
 
 export default function Home() {
   const { createSession } = useSessions();
   const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.role === "admin";
 
   const startNewChat = () => {
     createSession();
@@ -38,7 +40,7 @@ export default function Home() {
             AI DESTEKLİ MEVZUAT ANALİZİ
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
-            Yatırım Teşvik Asistanı'na Hoş Geldiniz
+            Yatırım Teşvik Asistanı&apos;na Hoş Geldiniz
           </h1>
           <p className="text-lg text-white/80 leading-relaxed">
             Yatırımlarda Devlet Yardımları Hakkında Karar ve ilgili tüm mevzuatı
@@ -53,12 +55,6 @@ export default function Home() {
               Hemen Başla
               <ArrowRight size={18} />
             </button>
-            <Link
-              href="/admin"
-              className="h-14 px-8 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white font-bold flex items-center gap-2 hover:bg-white/20 transition-all active:scale-95"
-            >
-              Belge Yükle
-            </Link>
           </div>
         </div>
       </div>
@@ -124,13 +120,15 @@ export default function Home() {
             </p>
           </div>
         </div>
-        <Link
-          href="/admin"
-          className="h-12 px-6 rounded-xl bg-card border border-border text-foreground text-sm font-bold flex items-center gap-2 hover:bg-secondary transition-all"
-        >
-          Yönetim Paneli
-          <ArrowRight size={16} />
-        </Link>
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="h-12 px-6 rounded-xl bg-card border border-border text-foreground text-sm font-bold flex items-center gap-2 hover:bg-secondary transition-all"
+          >
+            Yönetim Paneli
+            <ArrowRight size={16} />
+          </Link>
+        )}
       </div>
     </div>
   );

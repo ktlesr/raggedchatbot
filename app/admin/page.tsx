@@ -442,22 +442,28 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-card border border-border rounded-[2.5rem] p-12 flex flex-col items-center justify-center text-center space-y-6">
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                <ShieldAlert size={40} />
+              <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                <ShieldCheck size={40} />
               </div>
               <div className="space-y-2">
                 <h3 className="text-2xl font-bold">
-                  Google Analytics Entegrasyonu
+                  Google Analytics Bağlantısı Aktif
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Canlı kullanıcı hareketlerini ve detaylı sorgu
-                  istatistiklerini izlemek için Google Analytics mülkünüzü
-                  bağlayın.
+                  İstatistikleriniz başarılı bir şekilde toplanıyor.
+                  <span className="block font-bold text-primary mt-1">
+                    Property: G-RXBH1RY6H1
+                  </span>
                 </p>
               </div>
-              <button className="h-12 px-8 rounded-xl bg-primary text-white font-bold text-sm shadow-xl shadow-primary/20 hover:opacity-90 transition-all">
-                GA4 DASHBOARD'U BAĞLA
-              </button>
+              <a
+                href="https://analytics.google.com/analytics/web/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="h-12 px-8 rounded-xl bg-primary text-white font-bold text-sm shadow-xl shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center"
+              >
+                GA4 PANELİNE GİT
+              </a>
             </div>
           </div>
         )}

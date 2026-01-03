@@ -1,14 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import {
-  Send,
-  User,
-  Bot,
-  Loader2,
-  Paperclip,
-  MessageSquare,
-} from "lucide-react";
+import { Send, User, Bot, Loader2, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import ReactMarkdown from "react-markdown";
 import { useSessions } from "@/lib/context/SessionContext";
@@ -124,9 +117,6 @@ export default function ChatInterface() {
             <h2 className="font-bold text-base truncate max-w-[300px]">
               {activeSession?.title || "Yeni Sohbet"}
             </h2>
-            <p className="text-[10px] text-emerald-500 font-bold tracking-widest uppercase">
-              • YASAL UZMAN AKTİF
-            </p>
           </div>
         </div>
       </div>
