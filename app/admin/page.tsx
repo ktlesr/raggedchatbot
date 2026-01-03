@@ -42,6 +42,8 @@ export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("inventory");
   const [adminData, setAdminData] = useState<any>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   // Inventory state
   const [file, setFile] = useState<File | null>(null);
@@ -77,8 +79,24 @@ export default function AdminPage() {
       (session?.user as any)?.role === "admin"
     ) {
       fetchData();
+      fetchAnalytics();
     }
   }, [status, session]);
+
+  const fetchAnalytics = async () => {
+    setLoadingAnalytics(true);
+    try {
+      const res = await fetch("/api/admin/analytics");
+      const data = await res.json();
+      if (res.ok) {
+        setAnalyticsData(data);
+      }
+    } catch (err) {
+      console.error("Fetch analytics error:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -446,11 +464,11 @@ export default function AdminPage() {
                   sub: "Veritabanı Kayıtlı",
                 },
                 {
-                  label: "Toplama Sorgu",
-                  val: "Simüle Ediliyor",
+                  label: "Aktif (Anlık)",
+                  val: analyticsData?.realtimeUsers || "0",
                   icon: TrendingUp,
                   color: "text-blue-500",
-                  sub: "GA4 API Gerekli",
+                  sub: "Şu An Sitede",
                 },
                 {
                   label: "Geri Bildirimler",
@@ -460,8 +478,14 @@ export default function AdminPage() {
                   sub: "Kullanıcı Mesajları",
                 },
                 {
-                  label: "Yeni Kullanıcı (Haftalık)",
-                  val: "1",
+                  label: "Ort. Oturum",
+                  val: analyticsData?.avgDuration
+                    ? `${Math.floor(analyticsData.avgDuration / 60)}:${(
+                        analyticsData.avgDuration % 60
+                      )
+                        .toString()
+                        .padStart(2, "0")}`
+                    : "0:00",
                   icon: Globe,
                   color: "text-orange-500",
                   sub: "Son 7 Gün",
@@ -504,26 +528,55 @@ export default function AdminPage() {
                   </span>
                 </div>
                 <div className="h-48 flex items-end justify-between gap-2 px-2">
-                  {[40, 60, 45, 90, 65, 80, 55].map((h, i) => (
-                    <div key={i} className="flex-1 group relative">
-                      <div
-                        className="bg-primary/20 hover:bg-primary/40 transition-all rounded-t-lg w-full cursor-pointer"
-                        style={{ height: `${h}%` }}
-                      />
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                        {h * 10} sorgu
-                      </div>
-                    </div>
-                  ))}
+                  {analyticsData?.trend && analyticsData.trend.length > 0
+                    ? analyticsData.trend.map((t: any, i: number) => (
+                        <div key={i} className="flex-1 group relative">
+                          <div
+                            className="bg-primary/20 hover:bg-primary/40 transition-all rounded-t-lg w-full cursor-pointer"
+                            style={{
+                              height: `${Math.min(
+                                100,
+                                (t.count /
+                                  (Math.max(
+                                    ...analyticsData.trend.map(
+                                      (x: any) => x.count,
+                                    ),
+                                  ) || 1)) *
+                                  100,
+                              )}%`,
+                            }}
+                          />
+                          <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20">
+                            {t.count} kullanıcı
+                          </div>
+                        </div>
+                      ))
+                    : [10, 20, 30, 40, 50, 60, 70].map((h, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 bg-secondary/20 rounded-t-lg"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
                 </div>
-                <div className="flex justify-between text-[10px] font-bold text-muted-foreground overflow-x-auto">
-                  <span>PZT</span>
-                  <span>SAL</span>
-                  <span>ÇAR</span>
-                  <span>PER</span>
-                  <span>CUM</span>
-                  <span>CMT</span>
-                  <span>PAZ</span>
+                <div className="flex justify-between text-[10px] font-bold text-muted-foreground overflow-x-auto pt-2">
+                  {analyticsData?.trend && analyticsData.trend.length > 0 ? (
+                    analyticsData.trend.map((t: any, i: number) => (
+                      <span key={i} className="flex-1 text-center">
+                        {t.date.substring(6)}
+                      </span>
+                    ))
+                  ) : (
+                    <>
+                      <span>PZT</span>
+                      <span>SAL</span>
+                      <span>ÇAR</span>
+                      <span>PER</span>
+                      <span>CUM</span>
+                      <span>CMT</span>
+                      <span>PAZ</span>
+                    </>
+                  )}
                 </div>
               </div>
 
