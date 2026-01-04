@@ -31,20 +31,59 @@ export function parseStructure(fullText: string): BelgeYapisal {
     }
 
     // --- 2. Ekleri Ayrıştır ---
-    // EK-1, EK-2 vs. (Başlık aynı satırda olabilir)
     const ekRegex = /EK[\s\-](\d+)([^\n]*)\n([\s\S]*?)(?=\n\s*EK[\s\-]\d+|$)/gi;
     while ((match = ekRegex.exec(normalized)) !== null) {
         const ekNo = match[1];
         const ekBaslik = match[2]?.trim() || "";
         const content = match[3].trim();
 
-        // Basitçe string olarak kaydet, daha sonra tablo parse edilebilir
-        // Burada tabulo ayrıştırmak için tableExtractor kullanılabilir.
         result.ekler[`ek_${ekNo}`] = {
             id: `ek_${ekNo}`,
             baslik: `Ek-${ekNo} ${ekBaslik}`,
             icerik: content
         };
+    }
+
+    // --- 3. Fallback for non-standard structured docs (like HIT-30) ---
+    if (result.maddeler.length === 0 && Object.keys(result.ekler).length === 0) {
+        // Split by HIT- pattern with lookahead
+        const blocks = normalized.split(/\n(?=HIT-[\s\n]*[A-Z0-9])/gi);
+
+        blocks.forEach((block, idx) => {
+            const trimmed = block.trim();
+            if (!trimmed) return;
+
+            // Extract title: Take first few short lines that start with HIT- or look like a header
+            const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l);
+            if (lines.length === 0) return;
+
+            let title = lines[0];
+
+            // If title is just "HIT-" or very short, try to append next lines if they are short
+            if (title.startsWith("HIT-") && title.length < 25 && lines.length > 1) {
+                if (lines[1].length < 40) {
+                    title += " " + lines[1];
+                    if (lines.length > 2 && lines[2].length < 40 && lines[2].startsWith("(")) {
+                        title += " " + lines[2];
+                    }
+                }
+            }
+
+            result.maddeler.push({
+                madde_no: title.substring(0, 50),
+                başlık: title.substring(0, 100),
+                içerik: trimmed
+            });
+        });
+
+        // Ensure we didn't lose the very first part if it didn't start with HIT-
+        if (result.maddeler.length === 0) {
+            result.maddeler.push({
+                madde_no: "Genel",
+                başlık: "Döküman İçeriği",
+                içerik: normalized
+            });
+        }
     }
 
     return result;
