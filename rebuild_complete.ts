@@ -64,6 +64,7 @@ async function main() {
         'd:/rag-index-tr/data/raw/cmp_teblig.pdf',
         'd:/rag-index-tr/data/raw/2016-9495_Proje_Bazli.pdf',
         'd:/rag-index-tr/data/raw/ytak.pdf',
+        'd:/rag-index-tr/data/raw/ytak_hesabi.pdf',
         'd:/rag-index-tr/data/raw/HIT30.pdf'
     ];
 

@@ -84,6 +84,21 @@
   }
 }
 
+@layer base {
+  button,
+  a {
+    cursor: pointer;
+  }
+
+  [role="button"] {
+    cursor: pointer;
+  }
+}
+
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
 /* Custom scrollbar for sidebar and chat */
 ::-webkit-scrollbar {
   width: 6px;
