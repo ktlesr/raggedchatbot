@@ -7,7 +7,6 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
 
     // 1. Maddeler Chunks
     data.maddeler.forEach(madde => {
-        // Ana Madde Chunk
         let safeMaddeNo = madde.madde_no.replace(/\s+/g, '_');
         let baseId = `madde_${safeMaddeNo}`;
 
@@ -20,48 +19,63 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
             seenIds.set(baseId, 1);
         }
 
-        chunks.push({
-            id: baseId,
-            text: `MADDE ${madde.madde_no} - ${madde.başlık}\n\n${madde.içerik}`,
-            metadata: {
-                doc_id: baseId,
-                doc_type: "madde",
-                konu: madde.başlık
-            }
+        const fullText = `MADDE ${madde.madde_no} - ${madde.başlık}\n\n${madde.içerik}`;
+        const maddeChunks = splitTextRecursive(fullText, 20000);
+
+        maddeChunks.forEach((chunkText, index) => {
+            chunks.push({
+                id: maddeChunks.length > 1 ? `${baseId}_part_${index + 1}` : baseId,
+                text: chunkText,
+                metadata: {
+                    doc_id: baseId,
+                    doc_type: "madde",
+                    konu: madde.başlık
+                }
+            });
         });
 
         // Alt Paragraflar (Sub-clauses)
         if (madde.alt_paragraflar && madde.alt_paragraflar.length > 0) {
             madde.alt_paragraflar.forEach(p => {
-                // Check if paragraph starts with a specific header like "Header:"
                 const headerMatch = p.metin.match(/^([^:\n]+):/);
                 const subKonu = headerMatch ? headerMatch[1].trim() : `${madde.başlık} (Prg. ${p.paragraf})`;
+                const pBaseId = `${baseId}_p_${p.paragraf}`;
 
-                chunks.push({
-                    id: `${baseId}_p_${p.paragraf}`,
-                    text: `MADDE ${madde.madde_no} / Paragraf ${p.paragraf}\n${p.metin}`,
-                    metadata: {
-                        doc_id: baseId,
-                        doc_type: "madde",
-                        konu: subKonu,
-                        baglantili_maddeler: [baseId]
-                    }
+                const pText = `MADDE ${madde.madde_no} / Paragraf ${p.paragraf}\n${p.metin}`;
+                const pChunks = splitTextRecursive(pText, 20000);
+
+                pChunks.forEach((chunkText, idx) => {
+                    chunks.push({
+                        id: pChunks.length > 1 ? `${pBaseId}_part_${idx + 1}` : pBaseId,
+                        text: chunkText,
+                        metadata: {
+                            doc_id: baseId,
+                            doc_type: "madde",
+                            konu: subKonu,
+                            baglantili_maddeler: [baseId]
+                        }
+                    });
                 });
             });
         }
     });
 
     // 2. Tanımlar Chunks
-    // Tanımları tek bir chunk yapmak yerine her tanımı ayrı chunk yapmak RAG için daha iyidir.
     Object.entries(data.tanimlar).forEach(([term, desc]) => {
-        chunks.push({
-            id: `tanim_${term.replace(/\s+/g, '_')}`,
-            text: `TANIM: ${term}\n${desc}`,
-            metadata: {
-                doc_id: `tanim_${term}`,
-                doc_type: "tanim",
-                konu: term
-            }
+        const fullText = `TANIM: ${term}\n${desc}`;
+        const tanimChunks = splitTextRecursive(fullText, 20000);
+        const baseId = `tanim_${term.replace(/\s+/g, '_')}`;
+
+        tanimChunks.forEach((chunkText, index) => {
+            chunks.push({
+                id: tanimChunks.length > 1 ? `${baseId}_part_${index + 1}` : baseId,
+                text: chunkText,
+                metadata: {
+                    doc_id: `tanim_${term}`,
+                    doc_type: "tanim",
+                    konu: term
+                }
+            });
         });
     });
 
