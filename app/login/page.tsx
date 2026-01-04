@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
+import { useRecaptchaReady } from "@/components/CaptchaProvider";
 import { cn } from "@/lib/utils/cn";
 import { useRouter } from "next/navigation";
 
@@ -27,11 +28,18 @@ export default function LoginPage() {
   const [name, setName] = useState("");
 
   const { executeRecaptcha } = useGoogleReCaptcha();
+  const recaptchaReady = useRecaptchaReady();
 
   const handleCaptchaAndAction = async (
     actionName: string,
     callback: (token: string) => Promise<void>,
   ) => {
+    if (!recaptchaReady) {
+      setError(
+        "reCAPTCHA anahtarı yükleniyor. Lütfen birkaç saniye sonra tekrar deneyin.",
+      );
+      return;
+    }
     if (!executeRecaptcha) {
       setError("reCAPTCHA henüz hazır değil. Lütfen sayfayı yenileyin.");
       return;
@@ -201,7 +209,7 @@ export default function LoginPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !recaptchaReady}
                 className={cn(
                   "w-full h-12 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg",
                   isRegistering
@@ -231,7 +239,7 @@ export default function LoginPage() {
 
               <button
                 onClick={handleGoogleLogin}
-                disabled={loading}
+                disabled={loading || !recaptchaReady}
                 className="w-full h-12 bg-white dark:bg-slate-900 border border-border hover:border-primary/50 text-foreground font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
               >
                 <img

@@ -1,16 +1,23 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+
+const RecaptchaReadyContext = React.createContext(false);
+
+export function useRecaptchaReady() {
+  return React.useContext(RecaptchaReadyContext);
+}
 
 export function CaptchaProvider({ children }: { children: React.ReactNode }) {
   const [siteKey, setSiteKey] = useState<string>(
     process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || "missing-site-key",
   );
   const [checked, setChecked] = useState(false);
+  const isReady = useMemo(() => siteKey !== "missing-site-key", [siteKey]);
 
   useEffect(() => {
-    if (siteKey && siteKey !== "missing-site-key") {
+    if (isReady) {
       setChecked(true);
       return;
     }
@@ -37,7 +44,7 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [siteKey]);
+  }, [isReady, siteKey]);
 
   useEffect(() => {
     if (checked && siteKey === "missing-site-key") {
@@ -48,8 +55,10 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
   }, [checked, siteKey]);
 
   return (
-    <GoogleReCaptchaProvider reCaptchaKey={siteKey}>
-      {children}
-    </GoogleReCaptchaProvider>
+    <RecaptchaReadyContext.Provider value={isReady}>
+      <GoogleReCaptchaProvider reCaptchaKey={siteKey}>
+        {children}
+      </GoogleReCaptchaProvider>
+    </RecaptchaReadyContext.Provider>
   );
 }
