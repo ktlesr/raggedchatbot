@@ -10,49 +10,44 @@ export function useRecaptchaReady() {
 }
 
 export function CaptchaProvider({ children }: { children: React.ReactNode }) {
-  const [siteKey, setSiteKey] = useState<string>(
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || "missing-site-key",
-  );
+  // Use a placeholder initially to avoid build-time issues
+  const [siteKey, setSiteKey] = useState<string>("missing-site-key");
   const [checked, setChecked] = useState(false);
 
-  // A key is only "ready" if it's not the placeholder and has a valid prefix (6L)
+  // A key is ready if it's been updated and isn't the placeholder
   const isReady = useMemo(() => {
-    return (
-      !!siteKey && siteKey !== "missing-site-key" && siteKey.startsWith("6L")
-    );
+    return siteKey !== "missing-site-key" && siteKey.length > 5;
   }, [siteKey]);
 
   useEffect(() => {
-    if (isReady) {
+    // Initial check for inlined env variable
+    const inlinedKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim();
+    if (inlinedKey && inlinedKey.length > 5) {
+      setSiteKey(inlinedKey);
       setChecked(true);
       return;
     }
 
     let cancelled = false;
-    console.log("Fetching reCAPTCHA site key from API...");
+    console.log("Fetching reCAPTCHA site key from dynamic API...");
 
     fetch("/api/recaptcha-site-key")
-      .then((res) => {
-        console.log("API response status:", res.status);
-        return res.ok ? res.json() : null;
-      })
+      .then((res) => (res.ok ? res.json() : null))
       .then((data: { siteKey?: string; diagnostics?: any } | null) => {
         if (cancelled) return;
 
-        console.log("API Diagnostics:", data?.diagnostics);
         const key = data?.siteKey?.trim();
-
-        if (key && key.startsWith("6L")) {
-          console.log(
-            "Valid reCAPTCHA key found:",
-            key.substring(0, 4) + "...",
-          );
+        if (key && key.length > 5) {
+          console.log("reCAPTCHA key successfully loaded from API.");
           setSiteKey(key);
         } else {
-          console.warn("API returned invalid or empty siteKey:", key);
+          console.warn(
+            "API did not return a valid siteKey. Diagnostics:",
+            data?.diagnostics,
+          );
         }
       })
-      .catch((err) => console.error("Fetch reCAPTCHA key error:", err))
+      .catch((err) => console.error("Could not fetch reCAPTCHA key:", err))
       .finally(() => {
         if (!cancelled) {
           setChecked(true);
@@ -62,20 +57,25 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isReady]);
+  }, []);
 
   useEffect(() => {
-    if (checked && !isReady) {
+    if (checked && !isReady && typeof window !== "undefined") {
       console.error(
-        "Critical Error: NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not defined or invalid in your environment. reCAPTCHA will not work. Current value:",
-        siteKey,
+        "reCAPTCHA Error: No valid site key found. Please check your Dokploy Environment Variables (RECAPTCHA_SITE_KEY).",
       );
     }
-  }, [checked, isReady, siteKey]);
+  }, [checked, isReady]);
 
   return (
     <RecaptchaReadyContext.Provider value={isReady}>
-      <GoogleReCaptchaProvider reCaptchaKey={isReady ? siteKey : "dummy-key"}>
+      {/* We only render the provider with the key if we have it, otherwise we use a dummy 
+          to keep the context alive but unusable until fixed. */}
+      <GoogleReCaptchaProvider
+        reCaptchaKey={
+          isReady ? siteKey : "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+        }
+      >
         {children}
       </GoogleReCaptchaProvider>
     </RecaptchaReadyContext.Provider>
