@@ -71,16 +71,17 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({
-            message: "Processed successfully and indexed in Vector DB",
+            message: "Mevzuat başarıyla analiz edildi ve vektör veri tabanına kaydedildi.",
             stats: {
                 pages: docs.length,
                 maddeler: structure.maddeler.length,
+                tanimlar: Object.keys(structure.tanimlar).length,
                 ekler: Object.keys(structure.ekler).length,
                 chunks: chunks.length
             },
             files: {
                 structure: jsonPath,
-                chunks: "Stored in Neon Vector DB"
+                chunks: "Neon Vector DB (Vercel/Neon)"
             }
         });
 

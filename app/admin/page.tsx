@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 interface Stats {
   pages: number;
   maddeler: number;
+  tanimlar: number;
   ekler: number;
   chunks: number;
 }
@@ -294,6 +295,51 @@ export default function AdminPage() {
                         </p>
                       </div>
                     </div>
+
+                    {!result.error && result.stats && (
+                      <div className="mt-6 pt-6 border-t border-emerald-500/10 grid grid-cols-2 sm:grid-cols-5 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Sayfa
+                          </p>
+                          <p className="text-xl font-bold">
+                            {result.stats.pages}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Madde
+                          </p>
+                          <p className="text-xl font-bold">
+                            {result.stats.maddeler}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Tanım
+                          </p>
+                          <p className="text-xl font-bold">
+                            {result.stats.tanimlar}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Ek
+                          </p>
+                          <p className="text-xl font-bold">
+                            {result.stats.ekler}
+                          </p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">
+                            Chunk
+                          </p>
+                          <p className="text-xl font-bold">
+                            {result.stats.chunks}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
