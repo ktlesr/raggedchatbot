@@ -18,57 +18,56 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
   }, [siteKey]);
 
   useEffect(() => {
-    // 1. Try to use build-time env if available
+    // Priority 1: Check if Next.js already has the key inlined
     const inlinedKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim();
-    if (inlinedKey && inlinedKey.length > 5) {
+    if (inlinedKey && inlinedKey.length > 10) {
+      console.log("reCAPTCHA key detected from build-time environment.");
       setSiteKey(inlinedKey);
       setChecked(true);
       return;
     }
 
-    // 2. Fallback to runtime API
+    // Priority 2: Fetch dynamically from server to bypass build-time inlining issues
     let cancelled = false;
-    fetch("/api/recaptcha-site-key")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { siteKey?: string; diagnostics?: string[] } | null) => {
-        if (cancelled) return;
-
-        const key = data?.siteKey?.trim();
-        if (key && key.length > 5) {
-          setSiteKey(key);
-        } else {
-          console.warn(
-            "reCAPTCHA Key missing in runtime too. Server-side keys found:",
-            data?.diagnostics,
-          );
+    const fetchKey = async () => {
+      try {
+        const res = await fetch("/api/recaptcha-site-key");
+        if (res.ok) {
+          const data = await res.json();
+          const key = data?.siteKey?.trim();
+          if (!cancelled && key && key.length > 10) {
+            console.log("reCAPTCHA key fetched successfully from dynamic API.");
+            setSiteKey(key);
+          } else if (!cancelled) {
+            console.error(
+              "No valid reCAPTCHA key found in dynamic API. Diagnostics:",
+              data?.diagnostics,
+            );
+          }
         }
-      })
-      .catch((err) => console.error("API Error fetching recaptcha key:", err))
-      .finally(() => {
+      } catch (err) {
+        console.error("Failed to fetch reCAPTCHA key from API:", err);
+      } finally {
         if (!cancelled) setChecked(true);
-      });
+      }
+    };
 
+    fetchKey();
     return () => {
       cancelled = true;
     };
   }, []);
 
-  // Show nothing until we checked
-  if (!checked) return <>{children}</>;
-
-  // If we have a key, use it. If not, render children without provider
-  // (which will trigger our friendly 'loading...' error in LoganPage instead of a Google error)
-  if (!isReady) {
-    return (
-      <RecaptchaReadyContext.Provider value={false}>
-        {children}
-      </RecaptchaReadyContext.Provider>
-    );
-  }
+  // We ALWAYS render the GoogleReCaptchaProvider to prevent "Context not implemented" errors in hooks.
+  // If the key isn't ready, we use a placeholder that will trigger a console warning
+  // but let the app render so we can see the diagnostic logs.
+  const finalKey = isReady
+    ? siteKey
+    : "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
 
   return (
-    <RecaptchaReadyContext.Provider value={true}>
-      <GoogleReCaptchaProvider reCaptchaKey={siteKey}>
+    <RecaptchaReadyContext.Provider value={isReady}>
+      <GoogleReCaptchaProvider reCaptchaKey={finalKey}>
         {children}
       </GoogleReCaptchaProvider>
     </RecaptchaReadyContext.Provider>
