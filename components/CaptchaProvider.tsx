@@ -23,18 +23,27 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
     }
 
     let cancelled = false;
+    console.log("Fetching reCAPTCHA site key from API...");
     fetch("/api/recaptcha-site-key")
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        console.log("API response status:", res.status);
+        return res.ok ? res.json() : null;
+      })
       .then((data: { siteKey?: string } | null) => {
-        if (cancelled) {
-          return;
-        }
+        if (cancelled) return;
+        console.log("API data received:", data);
         const key = data?.siteKey?.trim();
         if (key) {
+          console.log(
+            "Updating siteKey state with:",
+            key.substring(0, 4) + "...",
+          );
           setSiteKey(key);
+        } else {
+          console.warn("API returned empty siteKey");
         }
       })
-      .catch(() => null)
+      .catch((err) => console.error("Fetch reCAPTCHA key error:", err))
       .finally(() => {
         if (!cancelled) {
           setChecked(true);
