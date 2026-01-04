@@ -3,32 +3,30 @@ import { NextResponse } from "next/server";
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  // Use a more dynamic way to access env to prevent build-time inlining
-  const allEnv = process.env as Record<string, string>;
+  // Use a completely dynamic way to access process.env 
+  // to avoid Next.js's build-time inlining of NEXT_PUBLIC_ variables.
+  const envKey = process.env["RECAPTCHA_SITE_KEY"];
+  const legacyKey = process.env["NEXT_PUBLIC_RECAPTCHA_SITE_KEY"];
 
-  const envKey = allEnv["RECAPTCHA_SITE_KEY"];
-  const legacyKey = allEnv["NEXT_PUBLIC_RECAPTCHA_SITE_KEY"];
+  // LOGS FOR YOU TO SEE IN DOKPLOY LOGS:
+  console.log("RECAPTCHA KEY FETCH ATTEMPT:", {
+    has_REC_SITE: !!envKey,
+    has_NP_REC_SITE: !!legacyKey
+  });
 
-  // Choose the best available key
   let siteKey = "";
-  if (envKey && envKey.trim().startsWith("6L")) {
+
+  // Priority 1: RECAPTCHA_SITE_KEY (Runtime Env - Best for production)
+  if (envKey && envKey.trim().length > 10) {
     siteKey = envKey.trim();
-  } else if (legacyKey && legacyKey.trim().startsWith("6L")) {
+  }
+  // Priority 2: NEXT_PUBLIC_RECAPTCHA_SITE_KEY (Build/Mixed Env)
+  else if (legacyKey && legacyKey.trim().length > 10) {
     siteKey = legacyKey.trim();
   }
 
-  // Diagnostics for debugging (redacted)
-  const diagnostics: Record<string, string> = {};
-  Object.keys(allEnv).forEach(k => {
-    if (k.includes("RECAPTCHA")) {
-      const v = allEnv[k] || "";
-      diagnostics[k] = v ? `${v.substring(0, 4)}... (${v.length} chars)` : "EMPTY";
-    }
-  });
-
   return NextResponse.json({
     siteKey,
-    isReady: !!siteKey,
-    diagnostics
+    isReady: !!siteKey
   });
 }
