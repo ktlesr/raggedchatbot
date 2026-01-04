@@ -14,7 +14,13 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
     process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || "missing-site-key",
   );
   const [checked, setChecked] = useState(false);
-  const isReady = useMemo(() => siteKey !== "missing-site-key", [siteKey]);
+
+  // A key is only "ready" if it's not the placeholder and has a valid prefix (6L)
+  const isReady = useMemo(() => {
+    return (
+      siteKey && siteKey !== "missing-site-key" && siteKey.startsWith("6L")
+    );
+  }, [siteKey]);
 
   useEffect(() => {
     if (isReady) {
@@ -24,23 +30,26 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
     console.log("Fetching reCAPTCHA site key from API...");
+
     fetch("/api/recaptcha-site-key")
       .then((res) => {
         console.log("API response status:", res.status);
         return res.ok ? res.json() : null;
       })
-      .then((data: { siteKey?: string } | null) => {
+      .then((data: { siteKey?: string; diagnostics?: any } | null) => {
         if (cancelled) return;
-        console.log("API data received:", data);
+
+        console.log("API Diagnostics:", data?.diagnostics);
         const key = data?.siteKey?.trim();
-        if (key) {
+
+        if (key && key.startsWith("6L")) {
           console.log(
-            "Updating siteKey state with:",
+            "Valid reCAPTCHA key found:",
             key.substring(0, 4) + "...",
           );
           setSiteKey(key);
         } else {
-          console.warn("API returned empty siteKey");
+          console.warn("API returned invalid or empty siteKey:", key);
         }
       })
       .catch((err) => console.error("Fetch reCAPTCHA key error:", err))
@@ -53,19 +62,20 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isReady, siteKey]);
+  }, [isReady]);
 
   useEffect(() => {
-    if (checked && siteKey === "missing-site-key") {
+    if (checked && !isReady) {
       console.error(
-        "Critical Error: NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not defined in your environment. reCAPTCHA will not work.",
+        "Critical Error: NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not defined or invalid in your environment. reCAPTCHA will not work. Current value:",
+        siteKey,
       );
     }
-  }, [checked, siteKey]);
+  }, [checked, isReady, siteKey]);
 
   return (
     <RecaptchaReadyContext.Provider value={isReady}>
-      <GoogleReCaptchaProvider reCaptchaKey={siteKey}>
+      <GoogleReCaptchaProvider reCaptchaKey={isReady ? siteKey : "dummy-key"}>
         {children}
       </GoogleReCaptchaProvider>
     </RecaptchaReadyContext.Provider>
