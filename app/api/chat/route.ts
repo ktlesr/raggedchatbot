@@ -189,6 +189,36 @@ ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
                 }
             });
             reply = result.response.text();
+        } else {
+            // Assume Ollama for local models
+            try {
+                const ollamaUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+                const response = await fetch(`${ollamaUrl}/api/chat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: activeModel,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: message }
+                        ],
+                        stream: false,
+                        options: {
+                            temperature: 0.3
+                        }
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    reply = data.message?.content || "";
+                } else {
+                    throw new Error(`Ollama error: ${response.statusText}`);
+                }
+            } catch (ollamaErr) {
+                console.error("Local model error:", ollamaErr);
+                reply = "Lokal model (Ollama) ile bağlantı kurulamadı. Lütfen Ollama'nın çalıştığından ve modelin indirildiğinden emin olun.";
+            }
         }
 
         return NextResponse.json({ reply });

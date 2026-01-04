@@ -712,22 +712,40 @@ export default function AdminPage() {
                     desc: "Hızlı ve ekonomik.",
                   },
                   {
-                    id: "gemini-2.5-flash",
-                    name: "Gemini 2.5 Flash",
+                    id: "gemini-2.0-flash",
+                    name: "Gemini 2.0 Flash",
                     provider: "Google",
                     desc: "Yeni nesil hız ve performans.",
                   },
                   {
-                    id: "gemini-2.5-pro",
-                    name: "Gemini 2.5 Pro",
+                    id: "gemini-1.5-pro",
+                    name: "Gemini 1.5 Pro",
                     provider: "Google",
                     desc: "Geniş bağlam ve derin analiz.",
                   },
                   {
-                    id: "gemini-2.5-flash-preview-09-2025",
-                    name: "gemini-2.5-flash-preview-09-2025",
-                    provider: "Google",
-                    desc: "Hızlı ve verimli.",
+                    id: "deepseek-r1:latest",
+                    name: "DeepSeek R1 (Lokal)",
+                    provider: "Ollama",
+                    desc: "Gelişmiş yerel düşünme modeli.",
+                  },
+                  {
+                    id: "llama3.1:8b",
+                    name: "Llama 3.1 8B (Lokal)",
+                    provider: "Ollama",
+                    desc: "Meta'nın güçlü yerel modeli.",
+                  },
+                  {
+                    id: "qwen2.5:7b-instruct",
+                    name: "Qwen 2.5 7B (Lokal)",
+                    provider: "Ollama",
+                    desc: "Alibaba'nın başarılı yerel modeli.",
+                  },
+                  {
+                    id: "qwen3:8b",
+                    name: "Qwen 3 8B (Lokal)",
+                    provider: "Ollama",
+                    desc: "En güncel yerel modellerden biri.",
                   },
                 ].map((m) => (
                   <button
