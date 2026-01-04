@@ -12,6 +12,17 @@ export const dynamic = 'force-dynamic';
 interface SearchResult {
     id: string;
     content: string;
+    source?: string;
+    similarity?: number;
+}
+
+interface DbRow {
+    id: string;
+    content: string;
+    metadata?: {
+        source?: string;
+        [key: string]: unknown;
+    };
     similarity?: number;
 }
 
@@ -33,11 +44,12 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     const queryEmbedding = await getEmbedding(query, openai);
     let vectorResults: SearchResult[] = [];
     try {
-        const results = await searchSimilarDocuments(queryEmbedding, 15);
-        vectorResults = results.map((r: Record<string, unknown>) => ({
-            id: r.id as string,
-            content: r.content as string,
-            similarity: r.similarity as number
+        const results = await searchSimilarDocuments(queryEmbedding, 10);
+        vectorResults = (results as unknown as DbRow[]).map((r) => ({
+            id: r.id,
+            content: r.content,
+            source: r.metadata?.source,
+            similarity: r.similarity
         }));
     } catch (e) {
         console.error("Vector search failed", e);
@@ -59,9 +71,10 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                    OR id LIKE ${`madde_Geçici_${safeMaddeNo}%`}
                 LIMIT 10;
             `;
-            directHits = rows.map((r: Record<string, unknown>) => ({
-                id: r.id as string,
-                content: r.content as string
+            directHits = (rows as unknown as DbRow[]).map((r) => ({
+                id: r.id,
+                content: r.content,
+                source: r.metadata?.source
             }));
         } catch (e) {
             console.error("Direct hit search failed", e);
@@ -81,11 +94,12 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 FROM rag_documents 
                 WHERE content ILIKE ${`%${primaryKeyword}%`}
                 ORDER BY length(content) ASC
-                LIMIT 10;
+                LIMIT 5;
             `;
-            keywordHits = rows.map((r: Record<string, unknown>) => ({
-                id: r.id as string,
-                content: r.content as string
+            keywordHits = (rows as unknown as DbRow[]).map((r) => ({
+                id: r.id,
+                content: r.content,
+                source: r.metadata?.source
             }));
         } catch (e) {
             console.error("Keyword search failed", e);
@@ -98,7 +112,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     const uniqueResults: SearchResult[] = [];
 
     let totalChars = 0;
-    const MAX_CONTEXT_CHARS = 20000; // Safe limit for ~8k token models
+    const MAX_CONTEXT_CHARS = 16000; // Even tighter focus
 
     for (const r of combined) {
         if (!seen.has(r.id)) {
@@ -113,12 +127,15 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 break;
             }
             uniqueResults.push(r);
-            totalChars += r.content.length;
+            totalChars += r.content.length + (r.source ? r.source.length + 10 : 0);
         }
     }
 
     if (uniqueResults.length === 0) return "";
-    return uniqueResults.map((r) => r.content).join("\n\n---\n\n");
+    return uniqueResults.map((r) => {
+        const sourcePrefix = r.source ? `[Kaynak: ${r.source}]\n` : "";
+        return `${sourcePrefix}${r.content}`;
+    }).join("\n\n---\n\n");
 }
 
 export async function POST(req: NextRequest) {
@@ -158,6 +175,8 @@ Kural 5: ÇIKTI FORMATI: Yanıtlarını her zaman Markdown formatında yapıland
     - Önemli terimleri **kalın (bold)** yap.
     - İçeriği paragraflara böl. 
     - Listeleri asla tek satırda (inline) verme, her madde yeni bir satırda olsun.
+
+Kural 6: Her bilgi parçasının başında [Kaynak: dosya_adi.pdf] etiketi bulunmaktadır. Yanıt verirken hangi belgeden bilgi aldığını bu etiketlere bakarak anla ve gerekirse "X belgesine göre..." şeklinde belirt. Eğer iki belge arasında çelişki varsa, kullanıcının en son yüklediği veya konuyla en doğrudan ilgili görünen belgeye öncelik ver.
 
 [BAĞLAM]
 ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
