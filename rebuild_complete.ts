@@ -61,7 +61,10 @@ async function main() {
     const pdfFiles = [
         'd:/rag-index-tr/data/raw/9903_karar.pdf',
         'd:/rag-index-tr/data/raw/cmp1.pdf',
-        'd:/rag-index-tr/data/raw/cmp_teblig.pdf'
+        'd:/rag-index-tr/data/raw/cmp_teblig.pdf',
+        'd:/rag-index-tr/data/raw/2016-9495_Proje_Bazli.pdf',
+        'd:/rag-index-tr/data/raw/ytak.pdf',
+        'd:/rag-index-tr/data/raw/HIT30.pdf'
     ];
 
     for (const pdfPath of pdfFiles) {
@@ -85,12 +88,18 @@ async function main() {
 
         // 4. Create Chunks
         console.log("Creating chunks...");
-        const chunks = createChunks(structure);
+        const chunks = createChunks(structure, sourceName);
         console.log(`Created ${chunks.length} chunks.`);
 
         // 5. Store in DB
         console.log(`Storing ${chunks.length} chunks in DB...`);
-        const { storeEmbedding } = await import('./lib/vector/neonDb');
+        const { storeEmbedding, clearTable } = await import('./lib/vector/neonDb');
+
+        // Only clear once
+        if (pdfPath === pdfFiles[0]) {
+            console.log("Clearing existing documents...");
+            await clearTable();
+        }
 
         for (let i = 0; i < chunks.length; i++) {
             const chunk = chunks[i];

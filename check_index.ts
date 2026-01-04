@@ -50,7 +50,7 @@ async function checkIndex() {
         const ekResults = await sql`
             SELECT id, metadata->>'source' as source, content, length(content) as len
             FROM rag_documents 
-            WHERE id LIKE 'ek_1%' OR id LIKE 'ek_2%'
+            WHERE id ILIKE 'cmp_teblig.pdf_ek_1%'
             ORDER BY id ASC;
         `;
 

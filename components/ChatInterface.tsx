@@ -145,101 +145,106 @@ export default function ChatInterface() {
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto px-3 py-6 md:px-20 md:py-8 space-y-8 md:space-y-12"
+        className="flex-1 overflow-y-auto px-3 py-6 md:px-6 md:py-8"
       >
-        {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-30 select-none">
-            <Bot size={80} className="text-primary" />
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold">Nasıl yardımcı olabilirim?</h3>
-              <p className="max-w-xs text-sm">
-                Yatırım teşvikleri ve mevzuat hakkında her şeyi sorabilirsiniz.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={cn(
-              "flex w-full group transition-all duration-300 animate-in fade-in slide-in-from-bottom-4",
-              m.role === "user" ? "justify-end" : "justify-start",
-            )}
-          >
-            <div className={cn("flex gap-4 max-w-[90%] md:max-w-[75%]")}>
-              {m.role === "bot" && (
-                <div className="relative shrink-0 hidden sm:block">
-                  <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-slate-800 flex items-center justify-center border border-border shadow-md">
-                    <Bot size={20} className="text-primary" />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2 flex-1">
-                <div
-                  className={cn(
-                    "p-4 md:p-5 rounded-3xl text-[14px] md:text-[15px] leading-relaxed",
-                    m.role === "user"
-                      ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/20"
-                      : "bg-secondary text-foreground rounded-tl-none border border-border",
-                  )}
-                >
-                  {m.role === "bot" ? (
-                    <ReactMarkdown
-                      components={{
-                        ul: ({ children }) => (
-                          <ul className="list-disc pl-5 my-3 space-y-2">
-                            {children}
-                          </ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="list-decimal pl-5 my-3 space-y-2">
-                            {children}
-                          </ol>
-                        ),
-                        p: ({ children }) => (
-                          <p className="mb-3 last:mb-0">{children}</p>
-                        ),
-                        strong: ({ children }) => (
-                          <strong className="font-bold text-primary">
-                            {children}
-                          </strong>
-                        ),
-                      }}
-                    >
-                      {m.content}
-                    </ReactMarkdown>
-                  ) : (
-                    <div className="whitespace-pre-wrap">{m.content}</div>
-                  )}
-                </div>
+        <div className="max-w-5xl mx-auto space-y-8 md:space-y-12">
+          {messages.length === 0 && (
+            <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center space-y-6 opacity-30 select-none">
+              <Bot size={80} className="text-primary" />
+              <div className="space-y-2">
+                <h3 className="text-2xl font-bold">
+                  Nasıl yardımcı olabilirim?
+                </h3>
+                <p className="max-w-xs text-sm">
+                  Yatırım teşvikleri ve mevzuat hakkında her şeyi
+                  sorabilirsiniz.
+                </p>
               </div>
+            </div>
+          )}
 
-              {m.role === "user" && (
-                <div className="shrink-0 pt-1 hidden sm:block">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
-                    <User size={20} className="text-primary" />
+          {messages.map((m, i) => (
+            <div
+              key={i}
+              className={cn(
+                "flex w-full group transition-all duration-300 animate-in fade-in slide-in-from-bottom-4",
+                m.role === "user" ? "justify-end" : "justify-start",
+              )}
+            >
+              <div className={cn("flex gap-4 max-w-[90%] md:max-w-[85%]")}>
+                {m.role === "bot" && (
+                  <div className="relative shrink-0 hidden sm:block">
+                    <div className="w-10 h-10 rounded-full bg-slate-900 dark:bg-slate-800 flex items-center justify-center border border-border shadow-md">
+                      <Bot size={20} className="text-primary" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2 flex-1">
+                  <div
+                    className={cn(
+                      "p-4 md:p-5 rounded-3xl text-[14px] md:text-[15px] leading-relaxed",
+                      m.role === "user"
+                        ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/20"
+                        : "bg-secondary text-foreground rounded-tl-none border border-border",
+                    )}
+                  >
+                    {m.role === "bot" ? (
+                      <ReactMarkdown
+                        components={{
+                          ul: ({ children }) => (
+                            <ul className="list-disc pl-5 my-3 space-y-2">
+                              {children}
+                            </ul>
+                          ),
+                          ol: ({ children }) => (
+                            <ol className="list-decimal pl-5 my-3 space-y-2">
+                              {children}
+                            </ol>
+                          ),
+                          p: ({ children }) => (
+                            <p className="mb-3 last:mb-0">{children}</p>
+                          ),
+                          strong: ({ children }) => (
+                            <strong className="font-bold text-primary">
+                              {children}
+                            </strong>
+                          ),
+                        }}
+                      >
+                        {m.content}
+                      </ReactMarkdown>
+                    ) : (
+                      <div className="whitespace-pre-wrap">{m.content}</div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-          </div>
-        ))}
 
-        {loading && (
-          <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
-            <div className="w-10 h-10 rounded-full bg-slate-900 hidden sm:flex items-center justify-center border border-border shadow-md">
-              <Bot size={20} className="text-primary" />
+                {m.role === "user" && (
+                  <div className="shrink-0 pt-1 hidden sm:block">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
+                      <User size={20} className="text-primary" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="bg-secondary border border-border rounded-3xl rounded-tl-none p-4 md:p-5 flex items-center gap-3">
-              <Loader2 size={18} className="animate-spin text-primary" />
-              <span className="text-xs md:text-sm font-medium text-muted-foreground italic">
-                Yanıt oluşturuluyor...
-              </span>
+          ))}
+
+          {loading && (
+            <div className="flex gap-4 animate-in fade-in slide-in-from-bottom-2">
+              <div className="w-10 h-10 rounded-full bg-slate-900 hidden sm:flex items-center justify-center border border-border shadow-md">
+                <Bot size={20} className="text-primary" />
+              </div>
+              <div className="bg-secondary border border-border rounded-3xl rounded-tl-none p-4 md:p-5 flex items-center gap-3">
+                <Loader2 size={18} className="animate-spin text-primary" />
+                <span className="text-xs md:text-sm font-medium text-muted-foreground italic">
+                  Yanıt oluşturuluyor...
+                </span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Input Area */}

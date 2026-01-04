@@ -51,3 +51,8 @@ export async function searchSimilarDocuments(embedding: number[], topK: number =
 
   return result;
 }
+// Function to clear all documents
+export async function clearTable() {
+  const sql = getSql();
+  await sql`TRUNCATE TABLE rag_documents`;
+}

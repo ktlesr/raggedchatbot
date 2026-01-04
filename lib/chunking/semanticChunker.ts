@@ -1,14 +1,15 @@
 
 import { BelgeYapisal, DocumentChunk } from "@/lib/utils/structuredData";
 
-export function createChunks(data: BelgeYapisal): DocumentChunk[] {
+export function createChunks(data: BelgeYapisal, sourcePrefix: string = ""): DocumentChunk[] {
     const chunks: DocumentChunk[] = [];
     const seenIds = new Map<string, number>();
+    const idPrefix = sourcePrefix ? `${sourcePrefix}_` : "";
 
     // 1. Maddeler Chunks
     data.maddeler.forEach(madde => {
         let safeMaddeNo = madde.madde_no.replace(/\s+/g, '_');
-        let baseId = `madde_${safeMaddeNo}`;
+        let baseId = `${idPrefix}madde_${safeMaddeNo}`;
 
         // Ensure Uniqueness
         if (seenIds.has(baseId)) {
@@ -23,8 +24,9 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
         const maddeChunks = splitTextRecursive(fullText, 20000);
 
         maddeChunks.forEach((chunkText, index) => {
+            const chunkId = maddeChunks.length > 1 ? `${baseId}_part_${index + 1}` : baseId;
             chunks.push({
-                id: maddeChunks.length > 1 ? `${baseId}_part_${index + 1}` : baseId,
+                id: chunkId,
                 text: chunkText,
                 metadata: {
                     doc_id: baseId,
@@ -45,8 +47,9 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
                 const pChunks = splitTextRecursive(pText, 20000);
 
                 pChunks.forEach((chunkText, idx) => {
+                    const chunkId = pChunks.length > 1 ? `${pBaseId}_part_${idx + 1}` : pBaseId;
                     chunks.push({
-                        id: pChunks.length > 1 ? `${pBaseId}_part_${idx + 1}` : pBaseId,
+                        id: chunkId,
                         text: chunkText,
                         metadata: {
                             doc_id: baseId,
@@ -64,14 +67,15 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
     Object.entries(data.tanimlar).forEach(([term, desc]) => {
         const fullText = `TANIM: ${term}\n${desc}`;
         const tanimChunks = splitTextRecursive(fullText, 20000);
-        const baseId = `tanim_${term.replace(/\s+/g, '_')}`;
+        const baseId = `${idPrefix}tanim_${term.replace(/\s+/g, '_')}`;
 
         tanimChunks.forEach((chunkText, index) => {
+            const chunkId = tanimChunks.length > 1 ? `${baseId}_part_${index + 1}` : baseId;
             chunks.push({
-                id: tanimChunks.length > 1 ? `${baseId}_part_${index + 1}` : baseId,
+                id: chunkId,
                 text: chunkText,
                 metadata: {
-                    doc_id: `tanim_${term}`,
+                    doc_id: `${idPrefix}tanim_${term}`,
                     doc_type: "tanim",
                     konu: term
                 }
@@ -87,11 +91,12 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
         const subChunks = splitTextRecursive(fullText, 8000); // ~2000 tokens
 
         subChunks.forEach((chunkText, index) => {
+            const chunkId = `${idPrefix}${key}_part_${index + 1}`;
             chunks.push({
-                id: `${key}_part_${index + 1}`,
+                id: chunkId,
                 text: chunkText,
                 metadata: {
-                    doc_id: key,
+                    doc_id: `${idPrefix}${key}`,
                     doc_type: "ek",
                     konu: `${ek.baslik} (Bölüm ${index + 1})`
                 }

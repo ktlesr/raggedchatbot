@@ -43,10 +43,10 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     // 1. Detect Source Hints
     const sourcePatterns = [
         { key: "9903", pattern: /9903/ },
-        { key: "2016-9495_Proje_Bazli.pdf", pattern: /9495|proje\s*bazli/i },
-        { key: "ytak.pdf", pattern: /ytak/i },
-        { key: "HIT30.pdf", pattern: /hit-?30/i },
-        { key: "cmp.pdf", pattern: /cmp|cazibe/i },
+        { key: "proje_bazli", pattern: /9495|proje\s*bazli/i },
+        { key: "ytak", pattern: /ytak/i },
+        { key: "hit30", pattern: /hit-?30/i },
+        { key: "cmp", pattern: /cmp|cazibe/i },
     ];
 
     const activeSourceHints = sourcePatterns
@@ -112,7 +112,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         try {
             // Rank by how many search terms are present
             const sourceFilter = activeSourceHints.length > 0
-                ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0].split('.')[0]}%`}`
+                ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0]}%`}`
                 : sql``;
 
             // Simple multi-term ILIKE (at least 2 terms or just 1 if only 1 is available)
@@ -126,14 +126,14 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
 
             // Forcefully look for EK content if query asks for lists/provinces
             const isListQuery = /liste|hangileri|iller|ilceler|ekler|ekleri/i.test(normalizedQuery);
-            const listClause = isListQuery ? sql`OR id LIKE 'ek_%'` : sql``;
+            const listClause = isListQuery ? sql`OR id ILIKE '%ek_%'` : sql``;
 
             const rows = await sql`
                 SELECT id, content, metadata
                 FROM rag_documents 
                 WHERE ((${ilikeClause}) ${listClause})
                    ${sourceFilter}
-                ORDER BY (id LIKE 'ek_%') DESC
+                ORDER BY (id ILIKE '%ek_%') DESC
                 LIMIT 25;
             `;
             keywordHits = (rows as unknown as DbRow[]).map((r) => ({
@@ -154,8 +154,8 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     // 2. Direct article hits second
     // 3. Vector matches with high similarity
     combined.sort((a, b) => {
-        const aIsHinted = activeSourceHints.some(h => a.source?.includes(h)) ? 1 : 0;
-        const bIsHinted = activeSourceHints.some(h => b.source?.includes(h)) ? 1 : 0;
+        const aIsHinted = activeSourceHints.some(h => a.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
+        const bIsHinted = activeSourceHints.some(h => b.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
         if (aIsHinted !== bIsHinted) return bIsHinted - aIsHinted;
 
         // If both same source hint status, check if direct hits
@@ -229,8 +229,11 @@ Döküman 4: 2019-1_9495_teblig.pdf - Proje Bazlı kararın uygulama ve ödeme d
 Döküman 5: ytak.pdf - TCMB Yatırım Taahhütlü Avans Kredisi (YTAK) uygulama talimatı.
 Döküman 6: ytak_hesabi.pdf - YTAK faiz oranı ve indirim puanı hesaplama teknik dökümanı.
 Döküman 7: HIT30.pdf - Yüksek teknoloji yatırımları (HIT-30) program rehberi ve çağrı başlıkları.
-Döküman 8: cmp.pdf - Cazibe Merkezleri Programı ana çatısıdır ve programın temel kapsamını oluşturur.
+Döküman 8: cmp1.pdf - Cazibe Merkezleri Programı ana çatısıdır ve programın temel kapsamını oluşturur.
 Döküman 9: cmp_teblig.pdf - Cazibe Merkezleri Programı (CMP) kapsamındaki temel konuların işleyişini ve detaylarını sunar.
+Döküman 10: 2016-9495_Proje_Bazli.pdf - Proje Bazlı Karar ana dosyası.
+Döküman 11: ytak.pdf - YTAK uygulama talimatı.
+Döküman 12: HIT30.pdf - HIT-30 rehberi.
 
 3. BÖLÜM: ORTAK DESTEK UNSURLARI YÖNETİMİ (KRİTİK)
 “DESTEK UNSURU ≠ TEK KAYNAK”. KDV istisnası, Vergi indirimi, Faiz desteği gibi unsurlar her rejimde farklı uygulanır.
