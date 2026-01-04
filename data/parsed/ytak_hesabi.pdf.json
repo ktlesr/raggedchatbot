@@ -1,0 +1,100 @@
+{
+  "belge_bilgisi": {
+    "ad": "Yatırımlarda Devlet Yardımları Hakkında Karar",
+    "tarih": "2023",
+    "yururluk_tarihi": "2026-01-01"
+  },
+  "maddeler": [
+    {
+      "madde_no": "11",
+      "başlık": "(1) Yatırım taahhütlü avans kredilerine/finansmanlarına Ek-6’da yer alan formüllere göre aşağıda",
+      "içerik": "belirtilen TSP, yurt dışından finansman temini ve finansal sağlamlık durumu esas alınarak baz faiz/kâr payı oranı \nüzerinden hesaplanan faiz/kâr payı oranları uygulanır. Kredilere/finansmanlara, yapılacak indirimler sonrasında \nuygulanacak faiz oranı yüzde 10’un altında olamaz. \nABC Teknoloji A.Ş. senaryosu üzerinden Faiz/Kâr Payı Oranının nasıl hesaplandığını adım adım ve rakamlarla \nörnek yaparsak. \nBu hesaplamada, kredinin kullanıldığı tarihteki güncel Politika Faizi oranı esas alındığından, örneğimizde, Politika \nFaizi'nin %45 olduğunu varsayalım. \nFaiz/Kâr Payı Hesaplama Adımları: \nAdım 1: Baz Faiz/Kâr Payı Oranının Belirlenmesi \nTalimata göre Baz Faiz/Kâr Payı oranı, Politika Faizi'nin 0,7 ile çarpımı sonucu bulunan oranın %30'u aşmaması \nkoşuluyla belirlenir. \nFormül: Baz Faiz/Kâr Payı = min(%30, Politika Faizi * 0,7)  \nHesaplama: min(%30, %45 * 0,7)=> %45 * 0,7 = %31,50=> min(%30, %31,50) = %30 \nSonuç: Bu kredi için Baz Faiz/Kâr Payı Oranı %30 olarak hesaplanır. \nAdım 2: İndirim Oranlarının Hesaplanması \nABC Teknoloji A.Ş. senaryomuzdaki tüm indirim koşullarını sağladığı için her bir indirim kalemini Baz Faiz/Kâr Payı \noranı üzerinden hesaplayacağız. Oranlar, virgülden sonra tam sayı olacak şekilde yuvarlanır. \na) TSP İndirimi (ITSP): Firma, 85'in üzerinde TSP puanına sahip olduğu için bu indirim uygulanır. \nFormül: `ITSP = Baz Faiz/Kâr Payı * (7/30) => Hesaplama: %30 * (7/30) = %7 \nUygulanacak İndirim: %7 \nb) Yurt Dışı Finansman İndirimi (IYDF): Proje büyüklüğünün %20'sinden fazla yurt dışı finansman sağlandığı \niçin bu indirim uygulanır. \nFormül: `IYDF = Baz Faiz/Kâr Payı * (5/30) => Hesaplama: %30 * (5/30) = %5 \nUygulanacak İndirim: %5 \nc) Finansal Sağlamlık İndirimi (IFS): Firma \"finansal sağlamlığı yüksek\" statüsünde olduğu için bu indirim \nuygulanır. \nFormül: `IFS = Baz Faiz/Kâr Payı * (3/30) => Hesaplama: %30 * (3/30) = %3 \nUygulanacak İndirim: %3 \nAdım 3: TCMB Tarafından Uygulanacak Nihai Faiz Oranının Hesaplanması \nTüm indirimler toplanır ve Baz Faiz Oranından düşülür. \nToplam İndirim: %7 + %5 + %3 = %15 \nNihai TCMB Oranı: Baz Faiz/Kâr Payı - Toplam İndirim => %30 - %15 = %15 \nTalimata göre, indirimler sonrası uygulanacak faiz oranı %10'un altında olamaz. %15 bu sınırın üzerinde olduğu \niçin geçerlidir. \nSonuç: Merkez Bankası'nın krediye uygulayacağı nihai faiz/kâr payı oranı %15'tir. \nAdım 4: ABC Teknoloji A.Ş.'ye Yansıyacak Son Faiz Oranı \nAracı banklar, TCMB'nin oranına kendi farklarını ekleyebilirler. KOBİ olmayan firmalar için bu fark azami 100 baz \npuandır (%1,00). \n\nYATIRIM TAAHHÜTLÜ AVANS KREDİSİ (YTAK) İNDİRİM ORANI HESABI \n2/2 \nHesaplama: Nihai TCMB Oranı + Aracı Banka Farkı => %15+ %1 = %16 \nSonuç: \nABC Teknoloji A.Ş., bu yatırım kredisi için, Politika Faizi'nin %45 olduğu bir dönemde, %16 nihai faiz/kâr payı oranı \nile finansman kullanacaktır. Bu oran, kredinin değişken faizli olması sebebiyle, geri ödeme dönemlerinde geçerli \nolan politika faizine göre yeniden hesaplanacaktır.  \nKullandırılacak faiz/kâr payı oranını dikkate aldığımızda ve Türkiye Yüzyılı Hamlesi (TYH) kapsamındaki faiz \ndesteğini karşılaştıracak olursak; \n1. TYH kapsamında indirim oranı %20’nin üzerine çıkamıyor, YTAK’ta %10’un altına düşemiyor. \n2. Doğrudan politika faizi (ör: %45) üzerinden en üst düzeyde toplam indirim TYH’de %20, YTAK’ta %30 \nolmaktadır. \n3. TYH kapsamında YKH için indirim oranı %40 olduğundan 45*0.4=18 puan indirim olmaktadır. Ayrıca bu \nindirimle elde edilecek tutar sabit yatırım tutarının %20’sini ve/veya 240 milyon TL’yi geçemez, YTAK’ta \nyukarıdaki örneğe göre ise %45-%16 = %29’a kadar indirim uygulanır.",
+      "alt_paragraflar": [
+        {
+          "paragraf": "ek_1",
+          "metin": "Faiz/Kâr Payı Hesaplama Adımları:"
+        },
+        {
+          "paragraf": "ek_2",
+          "metin": "Adım 1: Baz Faiz/Kâr Payı Oranının Belirlenmesi Talimata göre Baz Faiz/Kâr Payı oranı, Politika Faizi'nin 0,7 ile çarpımı sonucu bulunan oranın %30'u aşmaması koşuluyla belirlenir."
+        },
+        {
+          "paragraf": "ek_3",
+          "metin": "Formül: Baz Faiz/Kâr Payı = min(%30, Politika Faizi * 0,7)"
+        },
+        {
+          "paragraf": "ek_4",
+          "metin": "Hesaplama: min(%30, %45 * 0,7)=> %45 * 0,7 = %31,50=> min(%30, %31,50) = %30"
+        },
+        {
+          "paragraf": "ek_5",
+          "metin": "Sonuç: Bu kredi için Baz Faiz/Kâr Payı Oranı %30 olarak hesaplanır."
+        },
+        {
+          "paragraf": "ek_6",
+          "metin": "Adım 2: İndirim Oranlarının Hesaplanması ABC Teknoloji A.Ş. senaryomuzdaki tüm indirim koşullarını sağladığı için her bir indirim kalemini Baz Faiz/Kâr Payı oranı üzerinden hesaplayacağız. Oranlar, virgülden sonra tam sayı olacak şekilde yuvarlanır. a) TSP İndirimi (ITSP): Firma, 85'in üzerinde TSP puanına sahip olduğu için bu indirim uygulanır."
+        },
+        {
+          "paragraf": "ek_7",
+          "metin": "Formül: `ITSP = Baz Faiz/Kâr Payı * (7/30) => Hesaplama: %30 * (7/30) = %7"
+        },
+        {
+          "paragraf": "ek_8",
+          "metin": "Uygulanacak İndirim: %7 b) Yurt Dışı Finansman İndirimi (IYDF): Proje büyüklüğünün %20'sinden fazla yurt dışı finansman sağlandığı için bu indirim uygulanır."
+        },
+        {
+          "paragraf": "ek_9",
+          "metin": "Formül: `IYDF = Baz Faiz/Kâr Payı * (5/30) => Hesaplama: %30 * (5/30) = %5"
+        },
+        {
+          "paragraf": "ek_10",
+          "metin": "Uygulanacak İndirim: %5 c) Finansal Sağlamlık İndirimi (IFS): Firma \"finansal sağlamlığı yüksek\" statüsünde olduğu için bu indirim uygulanır."
+        },
+        {
+          "paragraf": "ek_11",
+          "metin": "Formül: `IFS = Baz Faiz/Kâr Payı * (3/30) => Hesaplama: %30 * (3/30) = %3"
+        },
+        {
+          "paragraf": "ek_12",
+          "metin": "Uygulanacak İndirim: %3"
+        },
+        {
+          "paragraf": "ek_13",
+          "metin": "Adım 3: TCMB Tarafından Uygulanacak Nihai Faiz Oranının Hesaplanması Tüm indirimler toplanır ve Baz Faiz Oranından düşülür."
+        },
+        {
+          "paragraf": "ek_14",
+          "metin": "Toplam İndirim: %7 + %5 + %3 = %15"
+        },
+        {
+          "paragraf": "ek_15",
+          "metin": "Nihai TCMB Oranı: Baz Faiz/Kâr Payı - Toplam İndirim => %30 - %15 = %15 Talimata göre, indirimler sonrası uygulanacak faiz oranı %10'un altında olamaz. %15 bu sınırın üzerinde olduğu için geçerlidir."
+        },
+        {
+          "paragraf": "ek_16",
+          "metin": "Sonuç: Merkez Bankası'nın krediye uygulayacağı nihai faiz/kâr payı oranı %15'tir."
+        },
+        {
+          "paragraf": "ek_17",
+          "metin": "Adım 4: ABC Teknoloji A.Ş.'ye Yansıyacak Son Faiz Oranı Aracı banklar, TCMB'nin oranına kendi farklarını ekleyebilirler. KOBİ olmayan firmalar için bu fark azami 100 baz puandır (%1,00). YATIRIM TAAHHÜTLÜ AVANS KREDİSİ (YTAK) İNDİRİM ORANI HESABI 2/2"
+        },
+        {
+          "paragraf": "ek_18",
+          "metin": "Hesaplama: Nihai TCMB Oranı + Aracı Banka Farkı => %15+ %1 = %16"
+        },
+        {
+          "paragraf": "ek_19",
+          "metin": "Sonuç: ABC Teknoloji A.Ş., bu yatırım kredisi için, Politika Faizi'nin %45 olduğu bir dönemde, %16 nihai faiz/kâr payı oranı ile finansman kullanacaktır. Bu oran, kredinin değişken faizli olması sebebiyle, geri ödeme dönemlerinde geçerli olan politika faizine göre yeniden hesaplanacaktır. Kullandırılacak faiz/kâr payı oranını dikkate aldığımızda ve Türkiye Yüzyılı Hamlesi (TYH) kapsamındaki faiz desteğini karşılaştıracak olursak; 1. TYH kapsamında indirim oranı %20’nin üzerine çıkamıyor, YTAK’ta %10’un altına düşemiyor. 2. Doğrudan politika faizi (ör: %45) üzerinden en üst düzeyde toplam indirim TYH’de %20, YTAK’ta %30 olmaktadır. 3. TYH kapsamında YKH için indirim oranı %40 olduğundan 45*0.4=18 puan indirim olmaktadır. Ayrıca bu indirimle elde edilecek tutar sabit yatırım tutarının %20’sini ve/veya 240 milyon TL’yi geçemez, YTAK’ta yukarıdaki örneğe göre ise %45-%16 = %29’a kadar indirim uygulanır."
+        }
+      ]
+    }
+  ],
+  "tanimlar": {},
+  "ekler": {
+    "ek_6": {
+      "id": "ek_6",
+      "baslik": "Ek-6 ’da yer alan formüllere göre aşağıda",
+      "icerik": "belirtilen TSP, yurt dışından finansman temini ve finansal sağlamlık durumu esas alınarak baz faiz/kâr payı oranı \nüzerinden hesaplanan faiz/kâr payı oranları uygulanır. Kredilere/finansmanlara, yapılacak indirimler sonrasında \nuygulanacak faiz oranı yüzde 10’un altında olamaz. \nABC Teknoloji A.Ş. senaryosu üzerinden Faiz/Kâr Payı Oranının nasıl hesaplandığını adım adım ve rakamlarla \nörnek yaparsak. \nBu hesaplamada, kredinin kullanıldığı tarihteki güncel Politika Faizi oranı esas alındığından, örneğimizde, Politika \nFaizi'nin %45 olduğunu varsayalım. \nFaiz/Kâr Payı Hesaplama Adımları: \nAdım 1: Baz Faiz/Kâr Payı Oranının Belirlenmesi \nTalimata göre Baz Faiz/Kâr Payı oranı, Politika Faizi'nin 0,7 ile çarpımı sonucu bulunan oranın %30'u aşmaması \nkoşuluyla belirlenir. \nFormül: Baz Faiz/Kâr Payı = min(%30, Politika Faizi * 0,7)  \nHesaplama: min(%30, %45 * 0,7)=> %45 * 0,7 = %31,50=> min(%30, %31,50) = %30 \nSonuç: Bu kredi için Baz Faiz/Kâr Payı Oranı %30 olarak hesaplanır. \nAdım 2: İndirim Oranlarının Hesaplanması \nABC Teknoloji A.Ş. senaryomuzdaki tüm indirim koşullarını sağladığı için her bir indirim kalemini Baz Faiz/Kâr Payı \noranı üzerinden hesaplayacağız. Oranlar, virgülden sonra tam sayı olacak şekilde yuvarlanır. \na) TSP İndirimi (ITSP): Firma, 85'in üzerinde TSP puanına sahip olduğu için bu indirim uygulanır. \nFormül: `ITSP = Baz Faiz/Kâr Payı * (7/30) => Hesaplama: %30 * (7/30) = %7 \nUygulanacak İndirim: %7 \nb) Yurt Dışı Finansman İndirimi (IYDF): Proje büyüklüğünün %20'sinden fazla yurt dışı finansman sağlandığı \niçin bu indirim uygulanır. \nFormül: `IYDF = Baz Faiz/Kâr Payı * (5/30) => Hesaplama: %30 * (5/30) = %5 \nUygulanacak İndirim: %5 \nc) Finansal Sağlamlık İndirimi (IFS): Firma \"finansal sağlamlığı yüksek\" statüsünde olduğu için bu indirim \nuygulanır. \nFormül: `IFS = Baz Faiz/Kâr Payı * (3/30) => Hesaplama: %30 * (3/30) = %3 \nUygulanacak İndirim: %3 \nAdım 3: TCMB Tarafından Uygulanacak Nihai Faiz Oranının Hesaplanması \nTüm indirimler toplanır ve Baz Faiz Oranından düşülür. \nToplam İndirim: %7 + %5 + %3 = %15 \nNihai TCMB Oranı: Baz Faiz/Kâr Payı - Toplam İndirim => %30 - %15 = %15 \nTalimata göre, indirimler sonrası uygulanacak faiz oranı %10'un altında olamaz. %15 bu sınırın üzerinde olduğu \niçin geçerlidir. \nSonuç: Merkez Bankası'nın krediye uygulayacağı nihai faiz/kâr payı oranı %15'tir. \nAdım 4: ABC Teknoloji A.Ş.'ye Yansıyacak Son Faiz Oranı \nAracı banklar, TCMB'nin oranına kendi farklarını ekleyebilirler. KOBİ olmayan firmalar için bu fark azami 100 baz \npuandır (%1,00). \n\nYATIRIM TAAHHÜTLÜ AVANS KREDİSİ (YTAK) İNDİRİM ORANI HESABI \n2/2 \nHesaplama: Nihai TCMB Oranı + Aracı Banka Farkı => %15+ %1 = %16 \nSonuç: \nABC Teknoloji A.Ş., bu yatırım kredisi için, Politika Faizi'nin %45 olduğu bir dönemde, %16 nihai faiz/kâr payı oranı \nile finansman kullanacaktır. Bu oran, kredinin değişken faizli olması sebebiyle, geri ödeme dönemlerinde geçerli \nolan politika faizine göre yeniden hesaplanacaktır.  \nKullandırılacak faiz/kâr payı oranını dikkate aldığımızda ve Türkiye Yüzyılı Hamlesi (TYH) kapsamındaki faiz \ndesteğini karşılaştıracak olursak; \n1. TYH kapsamında indirim oranı %20’nin üzerine çıkamıyor, YTAK’ta %10’un altına düşemiyor. \n2. Doğrudan politika faizi (ör: %45) üzerinden en üst düzeyde toplam indirim TYH’de %20, YTAK’ta %30 \nolmaktadır. \n3. TYH kapsamında YKH için indirim oranı %40 olduğundan 45*0.4=18 puan indirim olmaktadır. Ayrıca bu \nindirimle elde edilecek tutar sabit yatırım tutarının %20’sini ve/veya 240 milyon TL’yi geçemez, YTAK’ta \nyukarıdaki örneğe göre ise %45-%16 = %29’a kadar indirim uygulanır."
+    }
+  }
+}
