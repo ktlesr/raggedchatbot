@@ -18,7 +18,7 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
   // A key is only "ready" if it's not the placeholder and has a valid prefix (6L)
   const isReady = useMemo(() => {
     return (
-      siteKey && siteKey !== "missing-site-key" && siteKey.startsWith("6L")
+      !!siteKey && siteKey !== "missing-site-key" && siteKey.startsWith("6L")
     );
   }, [siteKey]);
 
