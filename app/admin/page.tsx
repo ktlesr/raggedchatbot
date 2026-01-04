@@ -712,14 +712,14 @@ export default function AdminPage() {
                     desc: "Hızlı ve ekonomik.",
                   },
                   {
-                    id: "gemini-2.0-flash",
-                    name: "Gemini 2.0 Flash",
+                    id: "gemini-2.5-flash",
+                    name: "Gemini 2.5 Flash",
                     provider: "Google",
                     desc: "Yeni nesil hız ve performans.",
                   },
                   {
-                    id: "gemini-1.5-pro",
-                    name: "Gemini 1.5 Pro",
+                    id: "gemini-2.5-pro",
+                    name: "Gemini 2.5 Pro",
                     provider: "Google",
                     desc: "Geniş bağlam ve derin analiz.",
                   },
@@ -730,22 +730,22 @@ export default function AdminPage() {
                     desc: "Gelişmiş yerel düşünme modeli.",
                   },
                   {
+                    id: "gpt-oss:latest",
+                    name: "GPT-OSS (Lokal)",
+                    provider: "Ollama",
+                    desc: "Güçlü açık kaynaklı yerel model.",
+                  },
+                  {
+                    id: "llama3:latest",
+                    name: "Llama 3 (Lokal)",
+                    provider: "Ollama",
+                    desc: "Meta'nın popüler yerel modeli.",
+                  },
+                  {
                     id: "llama3.1:8b",
                     name: "Llama 3.1 8B (Lokal)",
                     provider: "Ollama",
-                    desc: "Meta'nın güçlü yerel modeli.",
-                  },
-                  {
-                    id: "qwen2.5:7b-instruct",
-                    name: "Qwen 2.5 7B (Lokal)",
-                    provider: "Ollama",
-                    desc: "Alibaba'nın başarılı yerel modeli.",
-                  },
-                  {
-                    id: "qwen3:8b",
-                    name: "Qwen 3 8B (Lokal)",
-                    provider: "Ollama",
-                    desc: "En güncel yerel modellerden biri.",
+                    desc: "Güncel ve verimli yerel model.",
                   },
                 ].map((m) => (
                   <button

@@ -3,8 +3,8 @@ import { neon } from "@neondatabase/serverless";
 
 export type ChatModel =
   | "gpt-4o" | "gpt-4o-mini"
-  | "gemini-2.0-flash" | "gemini-1.5-pro" | "gemini-1.5-flash"
-  | "deepseek-r1:latest" | "llama3.1:8b" | "qwen2.5:7b-instruct" | "qwen3:8b" | "llama3:latest"
+  | "gemini-2.5-flash" | "gemini-2.5-pro" | "gemini-1.5-pro" | "gemini-1.5-flash"
+  | "deepseek-r1:latest" | "llama3.1:8b" | "gpt-oss:latest" | "llama3:latest"
   | string;
 
 const DEFAULT_MODEL: ChatModel = "gpt-4o";
