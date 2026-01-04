@@ -239,8 +239,9 @@ export default function LoginPage() {
 
               <button
                 onClick={handleGoogleLogin}
+                type="button"
                 disabled={loading || !recaptchaReady}
-                className="w-full h-12 bg-white dark:bg-slate-900 border border-border hover:border-primary/50 text-foreground font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
+                className="w-full h-12 bg-white dark:bg-slate-800 border border-border hover:border-primary/50 text-slate-900 dark:text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm text-sm"
               >
                 <img
                   src="https://www.google.com/favicon.ico"
@@ -260,11 +261,20 @@ export default function LoginPage() {
             <div className="pt-4 flex flex-col items-center gap-4 w-full">
               <button
                 onClick={() => setIsRegistering(!isRegistering)}
+                type="button"
                 className="text-primary hover:underline font-bold text-xs transition-all"
               >
                 {isRegistering
                   ? "Zaten hesabınız var mı? Giriş yapın"
                   : "Hesabınız yok mu? Hemen üye olun"}
+              </button>
+
+              <button
+                onClick={() => router.push("/")}
+                type="button"
+                className="text-muted-foreground hover:text-primary text-xs transition-all"
+              >
+                Üye olmadan devam etmek istiyorum
               </button>
 
               <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-medium uppercase tracking-tighter opacity-70">
