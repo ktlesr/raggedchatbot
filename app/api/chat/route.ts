@@ -181,6 +181,7 @@ Kural 6: Her bilgi parçasının başında [Kaynak: dosya_adi.pdf] etiketi bulun
 Kural 7: BELGE ÖNCELİĞİ: "Cazibe Merkezleri Programı" (CMP) soruluyorsa, SADECE adında 'cmp' veya 'cazibe' geçen dökümanlardaki (örn: cmp1.pdf) listeleri esas al. 
 Kural 8: Genel teşvik mevzuatındaki (örn: ytak.pdf) "6. Bölge İlçe Listesi" gibi listeleri CMP il listesiyle ASLA karıştırma. CMP sadece 25 ili kapsayan spesifik bir programdır.
 Kural 9: Eğer bağlamda çelişkili iki liste varsa, kaynak etiketine bak ve sorulan programın adıyla eşleşen dökümana sadık kal.
+Kural 10: "Yatırım Taahhütlü Avans Kredisi" (YTAK) ile ilgili sorular sorulduğunda, [Kaynak: ytak.pdf] etiketli parçaları temel alarak yanıt ver.
 
 [BAĞLAM]
 ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
