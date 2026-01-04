@@ -33,7 +33,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     const queryEmbedding = await getEmbedding(query, openai);
     let vectorResults: SearchResult[] = [];
     try {
-        const results = await searchSimilarDocuments(queryEmbedding, 20);
+        const results = await searchSimilarDocuments(queryEmbedding, 15);
         vectorResults = results.map((r: Record<string, unknown>) => ({
             id: r.id as string,
             content: r.content as string,
@@ -57,7 +57,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 WHERE id = ${`madde_${safeMaddeNo}`} 
                    OR id LIKE ${`madde_${safeMaddeNo}_p_%`}
                    OR id LIKE ${`madde_Geçici_${safeMaddeNo}%`}
-                LIMIT 15;
+                LIMIT 10;
             `;
             directHits = rows.map((r: Record<string, unknown>) => ({
                 id: r.id as string,
@@ -92,15 +92,28 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         }
     }
 
-    // D. Combine
+    // D. Combine and Limit
     const combined = [...directHits, ...vectorResults, ...keywordHits];
     const seen = new Set<string>();
     const uniqueResults: SearchResult[] = [];
 
+    let totalChars = 0;
+    const MAX_CONTEXT_CHARS = 20000; // Safe limit for ~8k token models
+
     for (const r of combined) {
         if (!seen.has(r.id)) {
             seen.add(r.id);
+            if (totalChars + r.content.length > MAX_CONTEXT_CHARS) {
+                // If the next chunk is too large, we still add it but truncate the final string if needed
+                // Or we can stop here to be safe
+                uniqueResults.push({
+                    id: r.id,
+                    content: r.content.substring(0, MAX_CONTEXT_CHARS - totalChars) + "... (Bağlam burada kesildi)"
+                });
+                break;
+            }
             uniqueResults.push(r);
+            totalChars += r.content.length;
         }
     }
 
