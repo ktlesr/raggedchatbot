@@ -83,18 +83,19 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
 
     // C. Keyword Search
     let keywordHits: SearchResult[] = [];
-    const keywords = ["vergi", "indirim", "muafiyet", "teşvik", "kdv", "faiz", "destek"];
+    const keywords = ["vergi", "indirim", "muafiyet", "teşvik", "kdv", "faiz", "destek", "il", "ilçe", "liste"];
     const foundKeywords = keywords.filter(k => normalizedQuery.includes(k));
 
     if (foundKeywords.length > 0 || (vectorResults.length > 0 && (vectorResults[0].similarity || 0) < 0.35)) {
         try {
             const primaryKeyword = foundKeywords[0] || normalizedQuery.split(' ')[0];
             const rows = await sql`
-                SELECT id, content 
+                SELECT id, content, metadata
                 FROM rag_documents 
                 WHERE content ILIKE ${`%${primaryKeyword}%`}
-                ORDER BY length(content) ASC
-                LIMIT 5;
+                   OR id LIKE 'ek_%'
+                ORDER BY (id LIKE 'ek_%') DESC, length(content) ASC
+                LIMIT 10;
             `;
             keywordHits = (rows as unknown as DbRow[]).map((r) => ({
                 id: r.id,
@@ -176,7 +177,10 @@ Kural 5: ÇIKTI FORMATI: Yanıtlarını her zaman Markdown formatında yapıland
     - İçeriği paragraflara böl. 
     - Listeleri asla tek satırda (inline) verme, her madde yeni bir satırda olsun.
 
-Kural 6: Her bilgi parçasının başında [Kaynak: dosya_adi.pdf] etiketi bulunmaktadır. Yanıt verirken hangi belgeden bilgi aldığını bu etiketlere bakarak anla ve gerekirse "X belgesine göre..." şeklinde belirt. Eğer iki belge arasında çelişki varsa, kullanıcının en son yüklediği veya konuyla en doğrudan ilgili görünen belgeye öncelik ver.
+Kural 6: Her bilgi parçasının başında [Kaynak: dosya_adi.pdf] etiketi bulunmaktadır. Yanıt verirken SADECE sorulan konuyla doğrudan ilgili dökümandaki bilgileri kullan. 
+Kural 7: BELGE ÖNCELİĞİ: "Cazibe Merkezleri Programı" (CMP) soruluyorsa, SADECE adında 'cmp' veya 'cazibe' geçen dökümanlardaki (örn: cmp1.pdf) listeleri esas al. 
+Kural 8: Genel teşvik mevzuatındaki (örn: ytak.pdf) "6. Bölge İlçe Listesi" gibi listeleri CMP il listesiyle ASLA karıştırma. CMP sadece 25 ili kapsayan spesifik bir programdır.
+Kural 9: Eğer bağlamda çelişkili iki liste varsa, kaynak etiketine bak ve sorulan programın adıyla eşleşen dökümana sadık kal.
 
 [BAĞLAM]
 ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
