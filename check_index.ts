@@ -8,12 +8,12 @@ function loadEnv() {
         const envPath = path.resolve(process.cwd(), ".env");
         if (fs.existsSync(envPath)) {
             const envContent = fs.readFileSync(envPath, "utf-8");
-            envContent.split("\n").forEach(line => {
+            envContent.split(/\r?\n/).forEach(line => {
                 const parts = line.split("=");
                 if (parts.length >= 2) {
                     const key = parts[0].trim();
-                    const value = parts.slice(1).join("=").trim();
-                    if (key && value && !process.env[key]) {
+                    const value = parts.slice(1).join("=").trim().replace(/^['"]|['"]$/g, '');
+                    if (key && value) {
                         process.env[key] = value;
                     }
                 }
@@ -29,12 +29,12 @@ loadEnv();
 async function checkIndex() {
     console.log("Checking if cmp1.pdf is indexed...");
 
-    if (!process.env.DATABASE_URL) {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
         console.error("Error: DATABASE_URL is not set.");
         return;
     }
-
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(dbUrl);
 
     try {
         // Check for any metadata containing 'cmp1'
@@ -45,22 +45,22 @@ async function checkIndex() {
             LIMIT 5;
         `;
 
-        if (results.length === 0) {
-            console.log("cmp1.pdf NOT found in metadata 'source' field.");
-            // Check literal search in content
-            const contentResults = await sql`
-                SELECT id, content 
-                FROM rag_documents 
-                WHERE content ILIKE '%Cazibe Merkezleri Programı Kapsamındaki İller%'
-                LIMIT 5;
-            `;
-            if (contentResults.length === 0) {
-                console.log("Title string NOT found in content either.");
-            } else {
-                console.log(`Found string in ${contentResults.length} chunks. Example ID: ${contentResults[0].id}`);
-            }
+        // Check for Ek-1 and Ek-2 specifically
+        console.log("\nVerifying Ek-1 and Ek-2 contents...");
+        const ekResults = await sql`
+            SELECT id, metadata->>'source' as source, content, length(content) as len
+            FROM rag_documents 
+            WHERE id LIKE 'ek_1%' OR id LIKE 'ek_2%'
+            ORDER BY id ASC;
+        `;
+
+        if (ekResults.length === 0) {
+            console.log("Ek-1 or Ek-2 NOT found!");
         } else {
-            console.log(`Found ${results.length} chunks from source: ${results[0].source}`);
+            ekResults.forEach(r => {
+                console.log(`- ID: ${r.id} (Len: ${r.len}) | Source: ${r.source}`);
+                console.log(`  Preview: ${r.content.substring(0, 100).replace(/\n/g, ' ')}...`);
+            });
         }
 
         // List all sources to see what's in there
@@ -69,7 +69,7 @@ async function checkIndex() {
             FROM rag_documents
             LIMIT 20;
         `;
-        console.log("\nRecent unique sources in DB:");
+        console.log("\nUnique sources in DB:");
         sources.forEach(s => console.log(`- ${s.source}`));
 
     } catch (error) {

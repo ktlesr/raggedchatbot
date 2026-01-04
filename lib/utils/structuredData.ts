@@ -33,6 +33,7 @@ export interface BelgeYapisal {
 export interface ChunkMetadata {
   doc_id: string;
   doc_type: "madde" | "ek" | "tanim";
+  source?: string;
   konu?: string;
   sayfa_no?: number;
   baglantili_maddeler?: string[];

@@ -83,8 +83,8 @@ export function createChunks(data: BelgeYapisal): DocumentChunk[] {
     Object.entries(data.ekler).forEach(([key, ek]) => {
         const fullText = `${ek.baslik}\n${ek.icerik}`;
 
-        // Split massive lists (like Ek-4) into manageable chunks
-        const subChunks = splitTextRecursive(fullText, 4000); // ~1000 tokens
+        // Split massive lists (like Ek-4) into manageable chunks, but keep them large enough for context
+        const subChunks = splitTextRecursive(fullText, 8000); // ~2000 tokens
 
         subChunks.forEach((chunkText, index) => {
             chunks.push({

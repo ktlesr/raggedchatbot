@@ -101,3 +101,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(100, 116, 139, 0.4);
 }
+
+/* Hide ReCAPTCHA badge */
+.grecaptcha-badge {
+  visibility: hidden;
+}

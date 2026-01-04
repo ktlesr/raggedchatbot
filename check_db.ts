@@ -29,12 +29,12 @@ loadEnv();
 async function main() {
     console.log("Checking Database Content...");
 
-    if (!process.env.DATABASE_URL) {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
         console.error("Error: DATABASE_URL is not set.");
         process.exit(1);
     }
-
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(dbUrl);
 
 
     try {

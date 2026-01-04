@@ -40,7 +40,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     const sql = neon(process.env.DATABASE_URL!);
     const normalizedQuery = normalizeTurkish(query);
 
-    // Source matching logic
+    // 1. Detect Source Hints
     const sourcePatterns = [
         { key: "9903", pattern: /9903/ },
         { key: "2016-9495_Proje_Bazli.pdf", pattern: /9495|proje\s*bazli/i },
@@ -53,11 +53,16 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         .filter(p => p.pattern.test(normalizedQuery))
         .map(p => p.key);
 
-    // A. Vector Search
+    // 2. Extract meaningful search terms (remove short words)
+    const searchTerms = normalizedQuery
+        .split(/\s+/)
+        .filter(w => w.length > 3 && !["sayili", "karar", "karari", "gore", "oldugu", "hakkinda"].includes(w));
+
+    // A. Vector Search (Unfiltered but we'll prioritize later)
     const queryEmbedding = await getEmbedding(query, openai);
     let vectorResults: SearchResult[] = [];
     try {
-        const results = await searchSimilarDocuments(queryEmbedding, 15);
+        const results = await searchSimilarDocuments(queryEmbedding, 20);
         vectorResults = (results as unknown as DbRow[]).map((r) => ({
             id: r.id,
             content: r.content,
@@ -68,13 +73,14 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         console.error("Vector search failed", e);
     }
 
-    // B. Specific Article Lookup
-    const maddeMatch = query.match(/madde\s*(\d+)/i);
+    // B. Direct Article Lookup (Prioritizing Article 2 if "tanim" or "nedir" is in query)
     let directHits: SearchResult[] = [];
+    const isDefinitionQuery = /tanim|nedir|ne\s*demek|un\s*anlami/i.test(normalizedQuery);
+    const maddeMatch = query.match(/madde\s*(\d+)/i);
 
-    if (maddeMatch) {
-        const maddeNo = maddeMatch[1];
-        try {
+    try {
+        if (maddeMatch || (isDefinitionQuery && activeSourceHints.length > 0)) {
+            const maddeNo = maddeMatch ? maddeMatch[1] : "2"; // Default to definitions if it's a definition query
             const safeMaddeNo = maddeNo.replace(/\s+/g, '_');
             const sourceFilter = activeSourceHints.length > 0
                 ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0]}%`}`
@@ -87,38 +93,48 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                    OR id LIKE ${`madde_${safeMaddeNo}_p_%`}
                    OR id LIKE ${`madde_Geçici_${safeMaddeNo}%`})
                    ${sourceFilter}
-                LIMIT 10;
+                ORDER BY id ASC
+                LIMIT 15;
             `;
             directHits = (rows as unknown as DbRow[]).map((r) => ({
                 id: r.id,
                 content: r.content,
                 source: r.metadata?.source
             }));
-        } catch (e) {
-            console.error("Direct hit search failed", e);
         }
+    } catch (e) {
+        console.error("Direct hit search failed", e);
     }
 
-    // C. Keyword Search
+    // C. Smart Keyword Search (Multi-term)
     let keywordHits: SearchResult[] = [];
-    const keywords = ["vergi", "indirim", "muafiyet", "teşvik", "kdv", "faiz", "destek", "il", "ilçe", "liste", "hamle", "teknoloji"];
-    const foundKeywords = keywords.filter(k => normalizedQuery.includes(k));
-
-    if (foundKeywords.length > 0 || (vectorResults.length > 0 && (vectorResults[0].similarity || 0) < 0.35)) {
+    if (searchTerms.length > 0) {
         try {
-            const primaryKeyword = foundKeywords[0] || normalizedQuery.split(' ')[0];
+            // Rank by how many search terms are present
             const sourceFilter = activeSourceHints.length > 0
-                ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0]}%`}`
+                ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0].split('.')[0]}%`}`
                 : sql``;
+
+            // Simple multi-term ILIKE (at least 2 terms or just 1 if only 1 is available)
+            const termsToMatch = searchTerms.slice(0, 3);
+            let ilikeClause = sql``;
+            if (termsToMatch.length === 1) {
+                ilikeClause = sql`content ILIKE ${`%${termsToMatch[0]}%`}`;
+            } else {
+                ilikeClause = sql`content ILIKE ${`%${termsToMatch[0]}%`} AND content ILIKE ${`%${termsToMatch[1]}%`}`;
+            }
+
+            // Forcefully look for EK content if query asks for lists/provinces
+            const isListQuery = /liste|hangileri|iller|ilceler|ekler|ekleri/i.test(normalizedQuery);
+            const listClause = isListQuery ? sql`OR id LIKE 'ek_%'` : sql``;
 
             const rows = await sql`
                 SELECT id, content, metadata
                 FROM rag_documents 
-                WHERE (content ILIKE ${`%${primaryKeyword}%`}
-                   OR id LIKE 'ek_%')
+                WHERE ((${ilikeClause}) ${listClause})
                    ${sourceFilter}
-                ORDER BY (id LIKE 'ek_%') DESC, length(content) ASC
-                LIMIT 10;
+                ORDER BY (id LIKE 'ek_%') DESC
+                LIMIT 25;
             `;
             keywordHits = (rows as unknown as DbRow[]).map((r) => ({
                 id: r.id,
@@ -126,48 +142,47 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 source: r.metadata?.source
             }));
         } catch (e) {
-            console.error("Keyword search failed", e);
+            console.error("Multi-term keyword search failed", e);
         }
     }
 
-    // D. Prioritize and Combine
-    // If a source is hinted, filter results to primarily show those, or put them at the top
-    let combined = [...directHits, ...vectorResults, ...keywordHits];
+    // D. Final Combination & Source Loyalty Ranking
+    const combined = [...directHits, ...keywordHits, ...vectorResults];
 
-    if (activeSourceHints.length > 0) {
-        const hintedResults = combined.filter(r =>
-            activeSourceHints.some(hint => r.source?.toLowerCase().includes(hint.toLowerCase()))
-        );
-        const otherResults = combined.filter(r =>
-            !activeSourceHints.some(hint => r.source?.toLowerCase().includes(hint.toLowerCase()))
-        );
-        combined = [...hintedResults, ...otherResults];
-    }
+    // Sort logic: 
+    // 1. Source hinted matches first
+    // 2. Direct article hits second
+    // 3. Vector matches with high similarity
+    combined.sort((a, b) => {
+        const aIsHinted = activeSourceHints.some(h => a.source?.includes(h)) ? 1 : 0;
+        const bIsHinted = activeSourceHints.some(h => b.source?.includes(h)) ? 1 : 0;
+        if (aIsHinted !== bIsHinted) return bIsHinted - aIsHinted;
+
+        // If both same source hint status, check if direct hits
+        const aIsDirect = directHits.some(d => d.id === a.id) ? 1 : 0;
+        const bIsDirect = directHits.some(d => d.id === b.id) ? 1 : 0;
+        if (aIsDirect !== bIsDirect) return bIsDirect - aIsDirect;
+
+        return (b.similarity || 0) - (a.similarity || 0);
+    });
 
     const seen = new Set<string>();
     const uniqueResults: SearchResult[] = [];
-
     let totalChars = 0;
-    const MAX_CONTEXT_CHARS = 16000;
+    const MAX_CONTEXT_CHARS = 18000;
 
     for (const r of combined) {
         if (!seen.has(r.id)) {
             seen.add(r.id);
-            if (totalChars + r.content.length > MAX_CONTEXT_CHARS) {
-                uniqueResults.push({
-                    id: r.id,
-                    content: r.content.substring(0, MAX_CONTEXT_CHARS - totalChars) + "... (Bağlam burada kesildi)"
-                });
-                break;
-            }
+            if (totalChars + r.content.length > MAX_CONTEXT_CHARS) break;
             uniqueResults.push(r);
-            totalChars += r.content.length + (r.source ? r.source.length + 10 : 0);
+            totalChars += r.content.length + 50;
         }
     }
 
     if (uniqueResults.length === 0) return "";
     return uniqueResults.map((r) => {
-        const sourcePrefix = r.source ? `[Kaynak: ${r.source}]\n` : "";
+        const sourcePrefix = r.source ? `[Kaynak: ${r.source} | ID: ${r.id}]\n` : "";
         return `${sourcePrefix}${r.content}`;
     }).join("\n\n---\n\n");
 }

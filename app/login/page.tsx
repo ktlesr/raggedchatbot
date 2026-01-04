@@ -277,9 +277,14 @@ export default function LoginPage() {
                 Üye olmadan devam etmek istiyorum
               </button>
 
-              <div className="flex items-center justify-center gap-2 text-[10px] text-muted-foreground font-medium uppercase tracking-tighter opacity-70">
-                <ShieldCheck size={12} className="text-emerald-500" />
-                RECAPTCHA V3 VE SSL KORUMALI
+              <div className="flex flex-col items-center justify-center gap-2 text-[10px] text-muted-foreground font-medium uppercase tracking-tighter opacity-70">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={12} className="text-emerald-500" />
+                  RECAPTCHA V3 VE SSL KORUMALI
+                </div>
+                <p className="text-[9px] lowercase opacity-50">
+                  bu site recaptcha v3 tarafından koruma altındadır
+                </p>
               </div>
             </div>
           </div>
