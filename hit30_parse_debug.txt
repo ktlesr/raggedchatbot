@@ -1,19 +1,24 @@
-[1] 1/9
-[2] HIT-30 kapsamındaki bu yatırım konularına başvuru 
-[3] HIT-30 Öncelikli Yatırım Alanları ve Konuları
-[4] HIT-30 Çağrıları Özeti (Amaç, Yatırım Niteliği ve 
-[5] HIT-Electric Vehicles (Elektrikli
-[6] HIT-Battery (Batarya)
-[7] HIT-Chip (Çip Yarı
-[8] HIT-R&D (Ar-Ge)
-[9] HIT-Wind (Rüzgar)
-[10] HIT-Data Center (Veri
-[11] HIT-AI (Yapay
-[12] HIT- Quantum (Kuantum)
-[13] HIT- Industrial
-[14] HIT- Solar (Güneş
-[15] HIT-30 Projesi'nde Aranan Proje Nitelikleri
-[16] HIT-30 Programı kapsamında desteklenecek projeleri
-[17] HIT-30 Projesi kapsamında sağlanacak teşvikler, pr
-[18] HIT-30 Kapsamında Sağlanacak Destekler
-[19] HIT-30 kapsamındaki yatırımlara özel olarak sermay
+[1] Giriş
+[2] HIT-30 Programı kapsamında belirlediği ve 8 alanda
+[3] HIT-30 kapsamındaki bu yatırım konularına başvuru 
+[4] HIT-30 Öncelikli Yatırım Alanları ve Konuları
+[5] HIT-30 Çağrıları Özeti (Amaç, Yatırım Niteliği ve 
+[6] HIT-30 kapsamındaki
+[7] HIT-Electric Vehicles
+[8] HIT-Battery (Batarya)
+[9] HIT-Chip (Çip Yarı
+[10] HIT-R&D (Ar-Ge)
+[11] HIT-Wind (Rüzgar)
+[12] HIT-Data Center (Veri
+[13] HIT-AI (Yapay
+[14] HIT- Quantum (Kuantum)
+[15] HIT- Industrial Robot
+[16] HIT- Solar (Güneş
+[17] HIT-30 Projesi kapsamında desteklenecek projelerde
+[18] HIT-30 Projesi'nde Aranan Proje Nitelikleri
+[19] HIT-30 Programı kapsamında desteklenecek projeleri
+[20] HIT-30 Projesi kapsamında sağlanacak teşvikler, pr
+[21] HIT-30 Kapsamında Sağlanacak Destekler
+[22] HIT-30  Programına  özel  olarak  bu  yatırım  ala
+[23] HIT-30 kapsamındaki yatırımlara özel olarak sermay
+[24] HIT-30’un öncelikli alanlarında teknolojik gelişim

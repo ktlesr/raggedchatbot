@@ -45,7 +45,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         { key: "9903", pattern: /9903/ },
         { key: "proje_bazli", pattern: /9495|proje\s*bazli/i },
         { key: "ytak", pattern: /ytak/i },
-        { key: "hit30", pattern: /hit-?30/i },
+        { key: "hit30", pattern: /hit-?30|acik\s*cagri|aktif\s*cagri/i },
         { key: "cmp", pattern: /cmp|cazibe/i },
     ];
 
@@ -228,7 +228,7 @@ Döküman 3: 2016-9495_Proje_Bazli.pdf - Büyük ölçekli ve stratejik yatırı
 Döküman 4: 2019-1_9495_teblig.pdf - Proje Bazlı kararın uygulama ve ödeme detayları.
 Döküman 5: ytak.pdf - TCMB Yatırım Taahhütlü Avans Kredisi (YTAK) uygulama talimatı.
 Döküman 6: ytak_hesabi.pdf - YTAK faiz oranı ve indirim puanı hesaplama teknik dökümanı.
-Döküman 7: HIT30.pdf - Yüksek teknoloji yatırımları (HIT-30) program rehberi ve çağrı başlıkları (Elektrikli Araç, Batarya, Çip vb.).
+Döküman 7: HIT30.pdf - Yüksek teknoloji yatırımları (HIT-30) program rehberi. Sayfa 1-3 arasında "AKTİF AÇIK ÇAĞRILAR" tablosu (Elektrikli Araç, Batarya, Çip, Rüzgar, Güneş, Yapay Zeka, Kuantum vb.) yer almaktadır. Kullanıcı "açık çağrılar" sorduğunda bu tabloya bak.
 Döküman 8: cmp1.pdf - Cazibe Merkezleri Programı ana çatısıdır ve programın temel kapsamını oluşturur.
 Döküman 9: cmp_teblig.pdf - Cazibe Merkezleri Programı (CMP) kapsamındaki temel konuların işleyişini ve detaylarını sunar.
 

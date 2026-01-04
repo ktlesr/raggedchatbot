@@ -46,31 +46,37 @@ export function parseStructure(fullText: string): BelgeYapisal {
 
     // --- 3. Fallback for non-standard structured docs (like HIT-30) ---
     if (result.maddeler.length === 0 && Object.keys(result.ekler).length === 0) {
-        // Split by HIT- pattern with lookahead
-        const blocks = normalized.split(/\n(?=HIT-[\s\n]*[A-Z0-9])/gi);
+        // Split by HIT- wherever it appears, as long as it looks like a section start
+        // Regex: Matches start of string OR any char, followed by HIT- pattern
+        const blocks = normalized.split(/(?=HIT\-[\s\n]*[A-Z0-9])/gi);
 
         blocks.forEach((block, idx) => {
             const trimmed = block.trim();
             if (!trimmed) return;
 
-            // Extract title: Take first few short lines that start with HIT- or look like a header
+            // Extract title: Take first few short lines
             const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l);
             if (lines.length === 0) return;
 
             let title = lines[0];
 
-            // If title is just "HIT-" or very short, try to append next lines if they are short
-            if (title.startsWith("HIT-") && title.length < 25 && lines.length > 1) {
+            // Consolidate fragmented headers like "HIT-\nQuantum"
+            if (title === "HIT-" && lines.length > 1) {
+                title += " " + lines[1];
+                if (lines.length > 2 && lines[2].length < 30) {
+                    title += " " + lines[2];
+                }
+            } else if (title.startsWith("HIT-") && title.length < 15 && lines.length > 1) {
                 if (lines[1].length < 40) {
                     title += " " + lines[1];
-                    if (lines.length > 2 && lines[2].length < 40 && lines[2].startsWith("(")) {
-                        title += " " + lines[2];
-                    }
                 }
             }
 
+            // If it's the very first part of the document and doesn't start with HIT-, name it "Giriş"
+            const maddeNo = title.startsWith("HIT-") ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
+
             result.maddeler.push({
-                madde_no: title.substring(0, 50),
+                madde_no: maddeNo,
                 başlık: title.substring(0, 100),
                 içerik: trimmed
             });

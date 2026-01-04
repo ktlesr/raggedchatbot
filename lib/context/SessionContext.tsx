@@ -7,6 +7,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import { useSession } from "next-auth/react";
 
 interface Message {
   role: "user" | "bot";
@@ -27,93 +28,139 @@ interface SessionContextType {
   createSession: (title?: string) => string;
   addMessage: (sessionId: string, message: Message) => void;
   updateLastMessage: (sessionId: string, content: string) => void;
+  syncSession: (sessionId: string) => void;
   deleteSession: (id: string) => void;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [sessions, setSessions] = useState<Session[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("rag_sessions");
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error("Failed to parse sessions", e);
-        }
-      }
-    }
-    return [];
-  });
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("rag_sessions");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          if (parsed.length > 0) return parsed[0].id;
-        } catch (e) {}
-      }
-    }
-    return null;
-  });
-
-  // Use a ref for isLoaded to avoid cascading renders
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  const syncToDb = useCallback(
+    async (session: Session) => {
+      if (status !== "authenticated") return;
+      try {
+        await fetch("/api/sessions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(session),
+        });
+      } catch (e) {
+        console.error("Failed to sync session to DB", e);
+      }
+    },
+    [status],
+  );
+
+  // Load Initial Data
   useEffect(() => {
-    // This is fine as it only runs once on mount
-    setIsLoaded(true);
-  }, []);
-
-  useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("rag_sessions", JSON.stringify(sessions));
-    }
-  }, [sessions, isLoaded]);
-
-  const createSession = useCallback((title = "Yeni Sohbet") => {
-    const newId = Date.now().toString();
-    const newSession: Session = {
-      id: newId,
-      title,
-      messages: [
-        {
-          role: "bot",
-          content:
-            "Merhaba! Yatırım Teşvik Mevzuatı hakkında sorularınızı cevaplamaya hazırım. Size nasıl yardımcı olabilirim?",
-        },
-      ],
-      createdAt: Date.now(),
-    };
-    setSessions((prev) => [newSession, ...prev]);
-    setActiveSessionId(newId);
-    return newId;
-  }, []);
-
-  const addMessage = useCallback((sessionId: string, message: Message) => {
-    setSessions((prev) =>
-      prev.map((s) => {
-        if (s.id === sessionId) {
-          let newTitle = s.title;
-          if (s.messages.length === 1 && message.role === "user") {
-            newTitle =
-              message.content.substring(0, 30) +
-              (message.content.length > 30 ? "..." : "");
+    const loadSessions = async () => {
+      if (isAuthenticated) {
+        try {
+          const res = await fetch("/api/sessions");
+          if (res.ok) {
+            const data = await res.json();
+            setSessions(data);
+            if (data.length > 0) setActiveSessionId(data[0].id);
           }
-          return { ...s, title: newTitle, messages: [...s.messages, message] };
+        } catch (error) {
+          console.error("Failed to fetch sessions", error);
         }
-        return s;
-      }),
-    );
-  }, []);
+      } else {
+        const saved = localStorage.getItem("rag_sessions");
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            setSessions(parsed);
+            if (parsed.length > 0) setActiveSessionId(parsed[0].id);
+          } catch (e) {}
+        }
+      }
+      setIsLoaded(true);
+    };
+
+    loadSessions();
+  }, [isAuthenticated]);
+
+  // Local Storage Sync (Only for Anon)
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!isAuthenticated) {
+      localStorage.setItem("rag_sessions", JSON.stringify(sessions));
+    } else {
+      localStorage.removeItem("rag_sessions");
+    }
+  }, [sessions, isAuthenticated, isLoaded]);
+
+  const createSession = useCallback(
+    (title = "Yeni Sohbet") => {
+      const newId = Date.now().toString();
+      const newSession: Session = {
+        id: newId,
+        title,
+        messages: [
+          {
+            role: "bot",
+            content:
+              "Merhaba! Yatırım Teşvik Mevzuatı hakkında sorularınızı cevaplamaya hazırım. Size nasıl yardımcı olabilirim?",
+          },
+        ],
+        createdAt: Date.now(),
+      };
+
+      setSessions((prev) => [newSession, ...prev]);
+      setActiveSessionId(newId);
+
+      if (isAuthenticated) {
+        syncToDb(newSession);
+      }
+
+      return newId;
+    },
+    [isAuthenticated, syncToDb],
+  );
+
+  const addMessage = useCallback(
+    (sessionId: string, message: Message) => {
+      setSessions((prev) => {
+        const updated = prev.map((s) => {
+          if (s.id === sessionId) {
+            let newTitle = s.title;
+            if (s.messages.length === 1 && message.role === "user") {
+              newTitle =
+                message.content.substring(0, 30) +
+                (message.content.length > 30 ? "..." : "");
+            }
+            const updatedSession = {
+              ...s,
+              title: newTitle,
+              messages: [...s.messages, message],
+            };
+
+            if (isAuthenticated) {
+              syncToDb(updatedSession);
+            }
+
+            return updatedSession;
+          }
+          return s;
+        });
+        return updated;
+      });
+    },
+    [isAuthenticated, syncToDb],
+  );
 
   const updateLastMessage = useCallback(
     (sessionId: string, content: string) => {
-      setSessions((prev) =>
-        prev.map((s) => {
+      setSessions((prev) => {
+        const updated = prev.map((s) => {
           if (s.id === sessionId) {
             const newMessages = [...s.messages];
             if (newMessages.length > 0) {
@@ -122,19 +169,57 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
                 content,
               };
             }
-            return { ...s, messages: newMessages };
+            const updatedSession = { ...s, messages: newMessages };
+
+            // We only sync to DB on complete messages or after stream usually,
+            // but for simplicity we sync here too (or skip until message end)
+            // If streaming, this might be too frequent.
+            // Let's only sync when content is not empty or at end.
+            return updatedSession;
           }
           return s;
-        }),
-      );
+        });
+        return updated;
+      });
     },
     [],
   );
 
-  const deleteSession = useCallback((id: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    setActiveSessionId((prev) => (prev === id ? null : prev));
+  // Sync back last message once bot finishes typing (custom logic)
+  useEffect(() => {
+    // In a real scenario, ChatInterface would call a final sync.
+    // For now, we'll assume addMessage handles the user input sync,
+    // and we might need an explicit sync for the bot's final answer.
   }, []);
+
+  const syncSession = useCallback(
+    async (sessionId: string) => {
+      if (!isAuthenticated) return;
+      // We need to get the latest session from the state
+      setSessions((prev) => {
+        const session = prev.find((s) => s.id === sessionId);
+        if (session) {
+          syncToDb(session);
+        }
+        return prev;
+      });
+    },
+    [isAuthenticated, syncToDb],
+  );
+
+  const deleteSession = useCallback(
+    (id: string) => {
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+      setActiveSessionId((prev) => (prev === id ? null : prev));
+
+      if (isAuthenticated) {
+        fetch(`/api/sessions?id=${id}`, { method: "DELETE" }).catch(
+          console.error,
+        );
+      }
+    },
+    [isAuthenticated],
+  );
 
   if (!isLoaded) return null;
 
@@ -147,6 +232,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         createSession,
         addMessage,
         updateLastMessage,
+        syncSession,
         deleteSession,
       }}
     >

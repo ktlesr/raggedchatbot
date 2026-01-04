@@ -13,6 +13,7 @@ export default function ChatInterface() {
     addMessage,
     createSession,
     updateLastMessage,
+    syncSession,
   } = useSessions();
 
   const [input, setInput] = useState("");
@@ -98,6 +99,7 @@ export default function ChatInterface() {
             } else {
               setIsTyping(false);
               isTypingRef.current = false;
+              if (targetSessionId) syncSession(targetSessionId);
             }
           };
           typeChar(0, "");
@@ -109,8 +111,8 @@ export default function ChatInterface() {
             "Üzgünüm, bir hata oluştu: " + (data.error || res.statusText),
         });
       }
-    } catch (err: any) {
-      if (err.name === "AbortError") {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
         console.log("Fetch aborted");
       } else {
         console.error("Chat error:", err);

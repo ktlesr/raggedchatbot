@@ -150,7 +150,10 @@ export default function Navbar() {
               <span className="hidden sm:inline">PROFILE</span>
             </Link>
             <button
-              onClick={() => signOut()}
+              onClick={() => {
+                localStorage.removeItem("rag_sessions");
+                signOut();
+              }}
               className="flex items-center gap-1.5 text-[10px] font-bold text-destructive hover:opacity-80 transition-opacity uppercase tracking-wider"
             >
               <LogOut size={14} />
