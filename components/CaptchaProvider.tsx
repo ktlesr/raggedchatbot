@@ -4,13 +4,13 @@ import React, { useEffect, useState } from "react";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
 
 export function CaptchaProvider({ children }: { children: React.ReactNode }) {
-  const [siteKey, setSiteKey] = useState<string | null>(
-    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || null,
+  const [siteKey, setSiteKey] = useState<string>(
+    process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY?.trim() || "missing-site-key",
   );
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (siteKey) {
+    if (siteKey && siteKey !== "missing-site-key") {
       setChecked(true);
       return;
     }
@@ -40,16 +40,12 @@ export function CaptchaProvider({ children }: { children: React.ReactNode }) {
   }, [siteKey]);
 
   useEffect(() => {
-    if (checked && !siteKey) {
+    if (checked && siteKey === "missing-site-key") {
       console.error(
         "Critical Error: NEXT_PUBLIC_RECAPTCHA_SITE_KEY is not defined in your environment. reCAPTCHA will not work.",
       );
     }
   }, [checked, siteKey]);
-
-  if (!siteKey) {
-    return <>{children}</>;
-  }
 
   return (
     <GoogleReCaptchaProvider reCaptchaKey={siteKey}>
