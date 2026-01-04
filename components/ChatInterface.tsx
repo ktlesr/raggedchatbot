@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { Send, User, Bot, Loader2, MessageSquare } from "lucide-react";
+import { Send, User, Bot, Loader2, MessageSquare, Square } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import ReactMarkdown from "react-markdown";
 import { useSessions } from "@/lib/context/SessionContext";
@@ -19,6 +19,8 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const isTypingRef = useRef(false);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId),
@@ -38,6 +40,16 @@ export default function ChatInterface() {
     }
   }, [messages, isTyping]);
 
+  const stopGenerating = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+    setIsTyping(false);
+    isTypingRef.current = false;
+  };
+
   const sendMessage = async () => {
     if (!input.trim() || loading || isTyping) return;
 
@@ -51,28 +63,33 @@ export default function ChatInterface() {
     setInput("");
     setLoading(true);
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMsg.content }),
+        signal: controller.signal,
       });
 
       const data = await res.json();
       setLoading(false);
+      abortControllerRef.current = null;
 
       if (res.ok) {
         setIsTyping(true);
+        isTypingRef.current = true;
         const fullText = data.reply;
 
-        // Add empty bot message
         addMessage(targetSessionId, { role: "bot", content: "" });
 
         const typingSpeed = 10;
 
         setTimeout(() => {
           const typeChar = (index: number, text: string) => {
-            if (index < fullText.length) {
+            if (isTypingRef.current && index < fullText.length) {
               const nextChar = fullText.charAt(index);
               const updatedText = text + nextChar;
               updateLastMessage(targetSessionId!, updatedText);
@@ -80,6 +97,7 @@ export default function ChatInterface() {
               setTimeout(() => typeChar(index + 1, updatedText), typingSpeed);
             } else {
               setIsTyping(false);
+              isTypingRef.current = false;
             }
           };
           typeChar(0, "");
@@ -91,15 +109,20 @@ export default function ChatInterface() {
             "Üzgünüm, bir hata oluştu: " + (data.error || res.statusText),
         });
       }
-    } catch (err) {
-      console.error("Chat error:", err);
-      setLoading(false);
-      if (targetSessionId) {
-        addMessage(targetSessionId, {
-          role: "bot",
-          content: "Sunucuya bağlanırken bir hata oluştu.",
-        });
+    } catch (err: any) {
+      if (err.name === "AbortError") {
+        console.log("Fetch aborted");
+      } else {
+        console.error("Chat error:", err);
+        if (targetSessionId) {
+          addMessage(targetSessionId, {
+            role: "bot",
+            content: "Sunucuya bağlanırken bir hata oluştu.",
+          });
+        }
       }
+      setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -235,19 +258,29 @@ export default function ChatInterface() {
             placeholder="Mevzuatta arayın..."
             rows={1}
           />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || loading}
-            className={cn(
-              "absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center gap-2 transition-all active:scale-95",
-              input.trim() && !loading
-                ? "bg-primary text-white shadow-lg shadow-primary/30 hover:opacity-90"
-                : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed",
-            )}
-          >
-            <Send size={16} />
-            <span className="hidden xs:inline">SOR</span>
-          </button>
+          {loading || isTyping ? (
+            <button
+              onClick={stopGenerating}
+              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center gap-2 transition-all active:scale-95 bg-destructive text-white shadow-lg shadow-destructive/30 hover:opacity-90 animate-in zoom-in-95"
+            >
+              <Square size={16} fill="white" />
+              <span className="hidden xs:inline">DURDUR</span>
+            </button>
+          ) : (
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || loading}
+              className={cn(
+                "absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center gap-2 transition-all active:scale-95",
+                input.trim()
+                  ? "bg-primary text-white shadow-lg shadow-primary/30 hover:opacity-90"
+                  : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed",
+              )}
+            >
+              <Send size={16} />
+              <span className="hidden xs:inline">SOR</span>
+            </button>
+          )}
         </div>
 
         <div className="hidden md:flex items-center justify-center gap-4 mt-4 opacity-40">
