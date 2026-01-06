@@ -51,12 +51,33 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(session),
         });
-      } catch (e) {
-        console.error("Failed to sync session to DB", e);
+      } catch {
+        console.error("Failed to sync session to DB");
       }
     },
     [status],
   );
+
+  // Heartbeat to update last_seen_at
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const sendHeartbeat = async () => {
+      try {
+        await fetch("/api/user/heartbeat", { method: "POST" });
+      } catch {
+        console.error("Heartbeat failed");
+      }
+    };
+
+    // Send immediately on mount/auth
+    sendHeartbeat();
+
+    // Then every 2 minutes
+    const interval = setInterval(sendHeartbeat, 120000);
+
+    return () => clearInterval(interval);
+  }, [status]);
 
   // Load Initial Data
   useEffect(() => {
@@ -79,7 +100,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
             const parsed = JSON.parse(saved);
             setSessions(parsed);
             if (parsed.length > 0) setActiveSessionId(parsed[0].id);
-          } catch (e) {}
+          } catch {}
         }
       }
       setIsLoaded(true);

@@ -14,7 +14,7 @@ async function isAdmin(email: string) {
     return result.length > 0 && result[0].role === "admin";
 }
 
-export async function GET(req: Request) {
+export async function GET() {
     try {
         const session = await getServerSession();
         if (!session || !session.user?.email || !(await isAdmin(session.user.email))) {
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
         const sql = neon(process.env.DATABASE_URL!);
 
         // Fetch users
-        const users = await sql`SELECT id, name, email, role, image, created_at FROM users ORDER BY created_at DESC`;
+        const users = await sql`SELECT id, name, email, role, image, created_at, last_seen_at FROM users ORDER BY created_at DESC`;
 
         // Fetch feedback with user info
         const feedbacks = await sql`
@@ -37,9 +37,11 @@ export async function GET(req: Request) {
         // Fetch some basic stats (count of documents from RAG table)
         const docCountResult = await sql`SELECT COUNT(DISTINCT(metadata->>'source')) as count FROM rag_documents`;
         const chunkCountResult = await sql`SELECT COUNT(*) as count FROM rag_documents`;
+        const activeUsersCountResult = await sql`SELECT COUNT(*) as count FROM users WHERE last_seen_at > NOW() - INTERVAL '5 minutes'`;
 
         const totalChunks = parseInt(chunkCountResult[0].count);
         let totalDocs = parseInt(docCountResult[0].count);
+        const activeUsers = parseInt(activeUsersCountResult[0].count);
 
         // Fallback: If we have chunks but 0 distinct sources (pre-metadata update), count it as 1 doc
         if (totalChunks > 0 && totalDocs === 0) {
@@ -58,11 +60,12 @@ export async function GET(req: Request) {
                 totalDocs,
                 totalChunks,
                 totalUsers: users.length,
-                totalFeedback: feedbacks.length
+                totalFeedback: feedbacks.length,
+                activeUsers
             }
         });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Unknown error" }, { status: 500 });
     }
 }
 
@@ -91,7 +94,7 @@ export async function PATCH(req: Request) {
         await sql`UPDATE users SET role = ${role} WHERE id = ${userId}`;
 
         return NextResponse.json({ success: true });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err) {
+        return NextResponse.json({ error: err instanceof Error ? err.message : "Unknown error" }, { status: 500 });
     }
 }

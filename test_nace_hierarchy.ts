@@ -1,5 +1,4 @@
 
-import OpenAI from "openai";
 import { neon } from "@neondatabase/serverless";
 import * as dotenv from 'dotenv';
 dotenv.config();

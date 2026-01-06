@@ -414,6 +414,9 @@ export default function AdminPage() {
                       Email
                     </th>
                     <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      Durum
+                    </th>
+                    <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Rol
                     </th>
                     <th className="px-8 py-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -450,6 +453,37 @@ export default function AdminPage() {
                       </td>
                       <td className="px-8 py-5 text-sm text-muted-foreground">
                         {u.email}
+                      </td>
+                      <td className="px-8 py-5">
+                        {(() => {
+                          const isOnline =
+                            u.last_seen_at &&
+                            new Date().getTime() -
+                              new Date(u.last_seen_at).getTime() <
+                              5 * 60 * 1000;
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={cn(
+                                  "w-2 h-2 rounded-full",
+                                  isOnline
+                                    ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse"
+                                    : "bg-muted-foreground/30",
+                                )}
+                              />
+                              <span
+                                className={cn(
+                                  "text-[10px] font-bold uppercase",
+                                  isOnline
+                                    ? "text-emerald-500"
+                                    : "text-muted-foreground/50",
+                                )}
+                              >
+                                {isOnline ? "Çevrim içi" : "Çevrim dışı"}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-8 py-5">
                         <span

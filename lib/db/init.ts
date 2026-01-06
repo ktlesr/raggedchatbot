@@ -4,12 +4,12 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 async function initDb() {
-    const sql = neon(process.env.DATABASE_URL!);
+  const sql = neon(process.env.DATABASE_URL!);
 
-    console.log("Creating tables...");
+  console.log("Creating tables...");
 
-    // Users table (already exists but ensuring structure)
-    await sql`
+  // Users table (already exists but ensuring structure)
+  await sql`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       name TEXT,
@@ -17,12 +17,13 @@ async function initDb() {
       image TEXT,
       password TEXT,
       role TEXT DEFAULT 'user',
-      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      last_seen_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
   `;
 
-    // Conversations table
-    await sql`
+  // Conversations table
+  await sql`
     CREATE TABLE IF NOT EXISTS conversations (
       id TEXT PRIMARY KEY,
       user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
@@ -32,8 +33,8 @@ async function initDb() {
     );
   `;
 
-    // Messages table
-    await sql`
+  // Messages table
+  await sql`
     CREATE TABLE IF NOT EXISTS messages (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       conversation_id TEXT REFERENCES conversations(id) ON DELETE CASCADE,
@@ -43,7 +44,7 @@ async function initDb() {
     );
   `;
 
-    console.log("Tables created successfully.");
+  console.log("Tables created successfully.");
 }
 
 initDb().catch(console.error);
