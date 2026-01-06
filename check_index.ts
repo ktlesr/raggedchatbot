@@ -37,13 +37,17 @@ async function checkIndex() {
     const sql = neon(dbUrl);
 
     try {
-        // Check for any metadata containing 'cmp1'
         const results = await sql`
             SELECT id, metadata->>'source' as source, content 
             FROM rag_documents 
             WHERE metadata->>'source' ILIKE '%cmp1%'
-            LIMIT 5;
+            LIMIT 1;
         `;
+        if (results.length > 0) {
+            console.log(`Checking if cmp1.pdf is indexed... YES (${results[0].source})`);
+        } else {
+            console.log("Checking if cmp1.pdf is indexed... NO");
+        }
 
         // Check for Ek-1 and Ek-2 specifically
         console.log("\nVerifying Ek-1 and Ek-2 contents...");

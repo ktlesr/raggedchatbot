@@ -47,6 +47,7 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         { key: "ytak", pattern: /ytak/i },
         { key: "hit30", pattern: /hit-?30|acik\s*cagri|aktif\s*cagri/i },
         { key: "cmp", pattern: /cmp|cazibe/i },
+        { key: "sector_search", pattern: /nace|yatirim\s*konusu|asgari\s*yatirim|kategorisi|sektor/i },
     ];
 
     const activeSourceHints = sourcePatterns
@@ -146,14 +147,54 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         }
     }
 
-    // D. Final Combination & Source Loyalty Ranking
-    const combined = [...directHits, ...keywordHits, ...vectorResults];
+    // D. NACE Hierarchy Search
+    let naceHits: SearchResult[] = [];
+    const nacePattern = /\b\d{2}(?:\.\d{1,3}){0,3}\b/g;
+    const potentialNaces = query.match(nacePattern);
+
+    if (potentialNaces) {
+        try {
+            for (const n of potentialNaces) {
+                if (["9903", "9495", "2024", "2025", "2023"].includes(n)) continue;
+
+                // Generic prefix: if 23.40, also look for 23.4
+                const cleanNace = n.endsWith(".00") ? n.slice(0, -3) : (n.endsWith(".0") ? n.slice(0, -2) : n);
+
+                const rows = await sql`
+                    SELECT id, content, metadata
+                    FROM rag_documents 
+                    WHERE (metadata->>'nace' LIKE ${`${cleanNace}%`}
+                       OR metadata->>'nace' LIKE ${`${n}%`}
+                       OR ${n} LIKE (metadata->>'nace' || '%'))
+                       AND metadata->>'source' = 'sector_search2.txt'
+                    LIMIT 20;
+                `;
+                const hits = (rows as unknown as DbRow[]).map((r) => ({
+                    id: r.id,
+                    content: r.content,
+                    source: r.metadata?.source
+                }));
+                naceHits = [...naceHits, ...hits];
+            }
+        } catch (e) {
+            console.error("NACE hierarchy search failed", e);
+        }
+    }
+
+    // E. Final Combination & Source Loyalty Ranking
+    const combined = [...naceHits, ...directHits, ...keywordHits, ...vectorResults];
 
     // Sort logic: 
-    // 1. Source hinted matches first
-    // 2. Direct article hits second
-    // 3. Vector matches with high similarity
+    // 1. NACE hits (for sector queries)
+    // 2. Source hinted matches first
+    // 3. Direct article hits second
+    // 4. Vector matches with high similarity
     combined.sort((a, b) => {
+        // Boost NACE matches from sector_search.txt
+        const aIsNace = a.id.startsWith("sector_") ? 1 : 0;
+        const bIsNace = b.id.startsWith("sector_") ? 1 : 0;
+        if (aIsNace !== bIsNace) return bIsNace - aIsNace;
+
         const aIsHinted = activeSourceHints.some(h => a.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
         const bIsHinted = activeSourceHints.some(h => b.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
         if (aIsHinted !== bIsHinted) return bIsHinted - aIsHinted;
@@ -231,6 +272,7 @@ Döküman 6: ytak_hesabi.pdf - YTAK faiz oranı ve indirim puanı hesaplama tekn
 Döküman 7: HIT30.pdf - Yüksek teknoloji yatırımları (HIT-30) program rehberi. Sayfa 1-3 arasında "AKTİF AÇIK ÇAĞRILAR" tablosu (Elektrikli Araç, Batarya, Çip, Rüzgar, Güneş, Yapay Zeka, Kuantum vb.) yer almaktadır. Kullanıcı "açık çağrılar" sorduğunda bu tabloya bak.
 Döküman 8: cmp1.pdf - Cazibe Merkezleri Programı ana çatısıdır ve programın temel kapsamını oluşturur.
 Döküman 9: cmp_teblig.pdf - Cazibe Merkezleri Programı (CMP) kapsamındaki temel konuların işleyişini ve detaylarını sunar.
+Döküman 10: sector_search2.txt (Sektörel Referans Tablosu) - NACE kodu ve yatırım konusu bazında yatırımın kategorisini (Hedef, Öncelikli, Teknoloji seviyesi vb.), şartlarını ve bölgelere göre asgari yatırım tutarlarını belirlemek için kullanılır. Kullanıcı NACE veya yatırım konusu sorduğunda BURAYA BAK.
 
 3. BÖLÜM: ORTAK DESTEK UNSURLARI YÖNETİMİ (KRİTİK)
 “DESTEK UNSURU ≠ TEK KAYNAK”. KDV istisnası, Vergi indirimi, Faiz desteği gibi unsurlar her rejimde farklı uygulanır.
@@ -252,6 +294,13 @@ Yanıt Verirken İzlenecek Kurallar:
 - Zorunlu Netlik Cümlesi: "Bu destek unsuru, teşvik rejimine göre farklı koşullarla uygulanmaktadır." veya "Bu açıklama yalnızca [Karar No] kapsamındaki uygulamayı ifade eder." cümlelerini mutlaka kullan.
 - YTAK Vurgusu: YTAK ile ilgili cevaplarda "Bu bir yatırım teşviki değil, finansman/kredi mekanizmasıdır" ibaresini ekle.
 - Bölgesel Ayrım: İllerin teşvik bölgesi için 9903_karar.pdf EK-2'ye bak.
+- [SEKTÖR ARAMA ÖZEL KURALLARI]
+  1. Kullanıcı NACE kodu veya yatırım konusu (Örn: "06.20.01" veya "Doğal gaz çıkarımı") verirse: Öncelikle sector_search2.txt dökümanında eşleştirme yap.
+  2. "Şartlar/Dipnotlar" alanındaki kısıtları (Örn: "İstanbul'da desteklenmez", "ruhsat zorunluluğu") mutlaka belirt.
+  3. Yatırımın "Hedef Yatırım" ve/veya "Öncelikli Yatırım" durumunu açıkça bildir.
+  4. İl Belirtilmemişse: Asgari yatırım tutarlarını bölge bazında listele ve ilini sor.
+  5. İl Belirtilmişse: İlin bölgesini tespit et ve sadece o bölgeye ait asgari yatırım tutarını yaz.
+  6. Birden fazla NACE kodu eşleşirse (hiyerarşik alt dallar gibi), bunları bir liste veya hiyerarşik yapıda özetleyerek kullanıcıya en uygun olanı seçebileceği bir sunum yap.
 - Çıktı Formatı: Yanıtlarını Markdown formatında, maddeler halinde ve önemli terimleri **kalın** yaparak yapılandır.
 
 [BAĞLAM]

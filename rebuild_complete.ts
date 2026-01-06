@@ -125,6 +125,44 @@ async function main() {
         }
     }
 
+    // --- Sector Search Processing ---
+    const sectorPath = 'd:/rag-index-tr/data/raw/sector_search2.txt';
+    if (fs.existsSync(sectorPath)) {
+        console.log(`\nProcessing Sector Search: ${sectorPath}...`);
+        const { parseSectorSearch } = await import('./lib/parsing/sectorParser');
+        const content = fs.readFileSync(sectorPath, 'utf-8');
+        const records = parseSectorSearch(content);
+        console.log(`Parsed ${records.length} sector records.`);
+
+        const { storeEmbedding } = await import('./lib/vector/neonDb');
+
+        for (let i = 0; i < records.length; i++) {
+            const record = records[i];
+            const chunkId = `sector_${record.nace}_${i}`;
+            const chunkText = `NACE: ${record.nace}\nKONU: ${record.topic}\nHEDEF: ${record.target}\nÖNCELİKLİ: ${record.priority}\nYÜKSEK TEKNOLOJİ: ${record.highTech}\nORTA-YÜKSEK: ${record.midHighTech}\nHAMLE: ${record.hamle}\nŞARTLAR: ${record.conditions}\nASGARİ YATIRIM: ${record.minInvestments}`;
+
+            const metadata = {
+                source: 'sector_search2.txt',
+                nace: record.nace,
+                topic: record.topic,
+                type: 'sector_lookup'
+            };
+
+            try {
+                const embeddingResponse = await openai.embeddings.create({
+                    model: "text-embedding-3-small",
+                    input: chunkText.replace(/\n/g, " "),
+                });
+                const embedding = embeddingResponse.data[0].embedding;
+
+                await storeEmbedding(chunkId, chunkText, metadata, embedding);
+                if (i % 20 === 0) process.stdout.write(`s`);
+            } catch (e) {
+                console.error(`\nError storing sector record ${record.nace}:`, e);
+            }
+        }
+    }
+
     console.log("\nDone!");
 }
 
