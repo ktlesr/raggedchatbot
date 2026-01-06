@@ -90,9 +90,9 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
             const rows = await sql`
                 SELECT id, content, metadata
                 FROM rag_documents 
-                WHERE (id = ${`madde_${safeMaddeNo}`} 
-                   OR id LIKE ${`madde_${safeMaddeNo}_p_%`}
-                   OR id LIKE ${`madde_Geçici_${safeMaddeNo}%`})
+                WHERE (id ILIKE ${`%madde_${safeMaddeNo}`} 
+                   OR id ILIKE ${`%madde_${safeMaddeNo}_p_%`}
+                   OR id ILIKE ${`%madde_Geçici_${safeMaddeNo}%`})
                    ${sourceFilter}
                 ORDER BY id ASC
                 LIMIT 15;
@@ -195,16 +195,19 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         const bIsNace = b.id.startsWith("sector_") ? 1 : 0;
         if (aIsNace !== bIsNace) return bIsNace - aIsNace;
 
+        // Boost strictly hinted matches first
         const aIsHinted = activeSourceHints.some(h => a.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
         const bIsHinted = activeSourceHints.some(h => b.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
+
+        // If a specific decree is hinted (like 9903), it must win over non-hinted
         if (aIsHinted !== bIsHinted) return bIsHinted - aIsHinted;
 
-        // If both same source hint status, check if direct hits
+        // If both hinted or both not hinted, check for specific "madde" match in query
         const aIsDirect = directHits.some(d => d.id === a.id) ? 1 : 0;
         const bIsDirect = directHits.some(d => d.id === b.id) ? 1 : 0;
         if (aIsDirect !== bIsDirect) return bIsDirect - aIsDirect;
 
-        return (b.similarity || 0) - (a.similarity || 0);
+        return (b.similarity || 0) - (aIsDirect === bIsDirect ? (a.similarity || 0) : 0);
     });
 
     const seen = new Set<string>();
@@ -290,8 +293,8 @@ B. Kaynak Eşleşme Haritası:
 - Enerji Desteği: Sadece Proje Bazlı (2016-9495) ve Cazibe Merkezleri (CMP) kapsamındadır.
 
 Yanıt Verirken İzlenecek Kurallar:
-- Kaynak Sadakati (Source Loyalty): Eğer kullanıcı sorusunda belirli bir Karar veya dosya adı (Örn: "9903", "HIT-30", "YTAK", "Proje Bazlı") belirtmişse, cevabını MÜNHASIRAN (yalnızca) o kaynağa dayandır. Diğer kaynaklardaki benzer isimli maddeleri/programları kesinlikle karıştırma. Eğer aranan bilgi belirtilen kaynakta yoksa bunu açıkça söyle.
-- Zorunlu Netlik Cümlesi: "Bu destek unsuru, teşvik rejimine göre farklı koşullarla uygulanmaktadır." veya "Bu açıklama yalnızca [Karar No] kapsamındaki uygulamayı ifade eder." cümlelerini mutlaka kullan.
+- Kaynak Sadakati (Source Loyalty) [KRİTİK]: Eğer kullanıcı sorusunda belirli bir Karar veya dosya adı (Örn: "9903", "HIT-30", "YTAK", "Proje Bazlı", "9495") belirtmişse, cevabını MÜNHASIRAN (yalnızca) o kaynağa dayandır. Diğer dökümanlarda (Örn: Proje Bazlı Karar'da) Madde 12 "Yatırım Yeri Tahsisi" olabilir, ancak kullanıcı "9903" sormuşsa o 12. maddeyi KESİNLİKLE kullanma, 9903'teki ilgili maddeye (Madde 21) git. Eğer aranan bilgi belirtilen kaynakta yoksa "Belirttiğiniz 9903 sayılı kararda bu konuda bilgi bulunmamaktadır" de.
+- Zorunlu Netlik Cümlesi: "Bu destek unsuru, teşvik rejimine göre farklı koşullarla uygulanmaktadır." veya "Bu açıklama yalnızca [Karar No] kapsamındaki uygulamayı ifade eder." cümlelerini benzer destekler (KDV, Vergi, Yer Tahsisi vb.) için mutlaka kullan.
 - YTAK Vurgusu: YTAK ile ilgili cevaplarda "Bu bir yatırım teşviki değil, finansman/kredi mekanizmasıdır" ibaresini ekle.
 - Bölgesel Ayrım: İllerin teşvik bölgesi için 9903_karar.pdf EK-2'ye bak.
 - [SEKTÖR ARAMA ÖZEL KURALLARI]
