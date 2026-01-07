@@ -152,20 +152,49 @@ function parseDefinitions(text: string): Tanimlar {
 }
 
 function fallbackParse(normalized: string, result: BelgeYapisal) {
-    const blocks = normalized.split(/(?=HIT\-[\s\n]*[A-Z0-9])/gi);
+    // Combine major headings and HIT- markers for splitting
+    const blocks = normalized.split(/(?=HIT\-[\s\n]*[A-Z0-9]|AKTİF\s+AÇIK\s+ÇAĞRILAR|SONA\s+ERMİŞ\s+ÇAĞRILAR)/gi);
+
+    let currentCategory = "";
+
     blocks.forEach((block, idx) => {
         const trimmed = block.trim();
         if (!trimmed) return;
-        const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l);
-        let title = lines[0];
-        if (title === "HIT-" && lines.length > 1) {
-            title += " " + lines[1];
+
+        // Detect major category headings
+        if (trimmed.toUpperCase().startsWith("AKTİF AÇIK ÇAĞRILAR")) {
+            currentCategory = "AKTİF AÇIK ÇAĞRI";
+        } else if (trimmed.toUpperCase().startsWith("SONA ERMİŞ ÇAĞRILAR")) {
+            currentCategory = "SONA ERMİŞ (KAPALI) ÇAĞRI";
         }
-        const maddeNo = title.startsWith("HIT-") ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
+
+        const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l);
+        if (lines.length === 0) return;
+
+        let title = lines[0];
+
+        // Handle fragmented HIT- headers
+        if (title.toUpperCase().startsWith("HIT-") && title.length < 10 && lines.length > 1) {
+            if (title.toUpperCase() === "HIT-" || title.length < 6) {
+                title += " " + lines[1];
+            }
+        }
+
+        const maddeNo = title.toUpperCase().startsWith("HIT-") ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
+
+        // Context Injection: Prepend category to content if it's a HIT- block
+        let finalContent = trimmed;
+        if (currentCategory && title.toUpperCase().startsWith("HIT-")) {
+            // Check if category is already mentioned at the very top (to avoid double)
+            if (!trimmed.includes(currentCategory)) {
+                finalContent = `DURUM: ${currentCategory}\n\n${trimmed}`;
+            }
+        }
+
         result.maddeler.push({
             madde_no: maddeNo,
             başlık: title.substring(0, 100),
-            içerik: trimmed
+            içerik: finalContent
         });
     });
 
