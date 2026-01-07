@@ -29,9 +29,11 @@ export function createChunks(data: BelgeYapisal, sourcePrefix: string = ""): Doc
                 id: chunkId,
                 text: chunkText,
                 metadata: {
+                    source: sourcePrefix,
                     doc_id: baseId,
                     doc_type: "madde",
-                    konu: madde.başlık
+                    konu: madde.başlık,
+                    madde_no: madde.madde_no
                 }
             });
         });
@@ -52,6 +54,7 @@ export function createChunks(data: BelgeYapisal, sourcePrefix: string = ""): Doc
                         id: chunkId,
                         text: chunkText,
                         metadata: {
+                            source: sourcePrefix,
                             doc_id: baseId,
                             doc_type: "madde",
                             konu: subKonu,
@@ -75,6 +78,7 @@ export function createChunks(data: BelgeYapisal, sourcePrefix: string = ""): Doc
                 id: chunkId,
                 text: chunkText,
                 metadata: {
+                    source: sourcePrefix,
                     doc_id: `${idPrefix}tanim_${term}`,
                     doc_type: "tanim",
                     konu: term
@@ -96,6 +100,7 @@ export function createChunks(data: BelgeYapisal, sourcePrefix: string = ""): Doc
                 id: chunkId,
                 text: chunkText,
                 metadata: {
+                    source: sourcePrefix,
                     doc_id: `${idPrefix}${key}`,
                     doc_type: "ek",
                     konu: `${ek.baslik} (Bölüm ${index + 1})`

@@ -162,10 +162,13 @@ function fallbackParse(normalized: string, result: BelgeYapisal) {
         if (!trimmed) return;
 
         // Detect major category headings
+        let isTopHeading = false;
         if (trimmed.toUpperCase().startsWith("AKTİF AÇIK ÇAĞRILAR")) {
             currentCategory = "AKTİF AÇIK ÇAĞRI";
+            isTopHeading = true;
         } else if (trimmed.toUpperCase().startsWith("SONA ERMİŞ ÇAĞRILAR")) {
             currentCategory = "SONA ERMİŞ (KAPALI) ÇAĞRI";
+            isTopHeading = true;
         }
 
         const lines = trimmed.split('\n').map(l => l.trim()).filter(l => l);
@@ -180,20 +183,38 @@ function fallbackParse(normalized: string, result: BelgeYapisal) {
             }
         }
 
-        const maddeNo = title.toUpperCase().startsWith("HIT-") ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
+        const isHitBlock = title.toUpperCase().startsWith("HIT-");
+        const maddeNo = isHitBlock ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
 
-        // Context Injection: Prepend category to content if it's a HIT- block
+        // Context Injection
         let finalContent = trimmed;
-        if (currentCategory && title.toUpperCase().startsWith("HIT-")) {
-            // Check if category is already mentioned at the very top (to avoid double)
+        let finalTitle = title;
+
+        if (currentCategory && isHitBlock) {
+            // Inject status into Title and Content
+            const statusTag = currentCategory.includes("SONA") ? "[KAPALI]" : "[AKTİF]";
+            finalTitle = `${statusTag} ${title}`;
             if (!trimmed.includes(currentCategory)) {
                 finalContent = `DURUM: ${currentCategory}\n\n${trimmed}`;
             }
+
+            // Create a dedicated Summary Block for higher similarity matching
+            const summaryContent = `HIT-30 ÇAĞRI ÖZETİ: ${finalTitle}\n\nDURUM: ${currentCategory}\nÇAĞRI ADI: ${title}\nBU PROGRAM ${currentCategory.includes("SONA") ? "KAPALI / SONA ERMİŞTİR" : "AKTİF / AÇIKTIR"}.`;
+            result.maddeler.push({
+                madde_no: `${maddeNo}_Ozet`,
+                başlık: `${finalTitle} (Özet)`,
+                içerik: summaryContent
+            });
+        }
+
+        // Avoid adding near-empty header chunks that mislead the AI
+        if (isTopHeading && lines.length < 5) {
+            return;
         }
 
         result.maddeler.push({
             madde_no: maddeNo,
-            başlık: title.substring(0, 100),
+            başlık: finalTitle.substring(0, 100),
             içerik: finalContent
         });
     });

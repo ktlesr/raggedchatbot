@@ -120,9 +120,9 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
             const termsToMatch = searchTerms.slice(0, 3);
             let ilikeClause = sql``;
             if (termsToMatch.length === 1) {
-                ilikeClause = sql`content ILIKE ${`%${termsToMatch[0]}%`}`;
+                ilikeClause = sql`unaccent(content) ILIKE unaccent(${`%${termsToMatch[0]}%`})`;
             } else {
-                ilikeClause = sql`content ILIKE ${`%${termsToMatch[0]}%`} AND content ILIKE ${`%${termsToMatch[1]}%`}`;
+                ilikeClause = sql`unaccent(content) ILIKE unaccent(${`%${termsToMatch[0]}%`}) AND unaccent(content) ILIKE unaccent(${`%${termsToMatch[1]}%`})`;
             }
 
             // Forcefully look for EK content if query asks for lists/provinces
@@ -307,6 +307,9 @@ Yanıt Verirken İzlenecek Kurallar:
   7. Asgari Yatırım Tutarları [KESİN KURAL]: Bölgeleri listelerken dökümandaki bölge numaralarına (1, 2, 3, 4, 5, 6) BİREBİR sadık kal. Her satırın başına "1." yazma hatasına düşme. Aynı tutara sahip olan bölgeleri "X. ve Y. Bölgeler" veya "X, Y, Z ve T. Bölgeler" şeklinde gruplandır. 
      - Örn: "1. ve 2. Bölgeler: 12.000.000 TL", "3, 4, 5 ve 6. Bölgeler: 6.000.000 TL".
      - DİKKAT: Bölge rakamlarının (3, 4, 5, 6) doğruluğunu dökümandan teyit et.
+- [HIT-30 ÖZEL KURALLARI]
+  1. Kullanıcı aktif veya kapalı/sona ermiş çağrıları sorduğunda, bağlamdaki DURUM etiketlerine (AKTİF/KAPALI) KESİNLİKLE uyun.
+  2. Bir çağrının (Örn: HIT-Solar) kapalı olduğu belirtilmişse, "Bilgi yok" demek yerine dökümandaki o çağrıya ait bilgileri kullanarak "Bu çağrı sona ermiştir" bilgisini verin.
 - Çıktı Formatı: Yanıtlarını Markdown formatında, maddeler halinde ve önemli terimleri **kalın** yaparak yapılandır.
 
 [BAĞLAM]

@@ -1,8 +1,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { parseStructure } from './lib/parsing/structureParser';
-import { createChunks } from './lib/chunking/semanticChunker';
+import { parseStructure } from '../lib/parsing/structureParser';
+import { createChunks } from '../lib/chunking/semanticChunker';
 
 import OpenAI from "openai";
 import { neon } from "@neondatabase/serverless";
@@ -94,7 +94,7 @@ async function main() {
 
         // 5. Store in DB
         console.log(`Storing ${chunks.length} chunks in DB...`);
-        const { storeEmbedding, clearTable } = await import('./lib/vector/neonDb');
+        const { storeEmbedding, clearTable } = await import('../lib/vector/neonDb');
 
         // Only clear once
         if (pdfPath === pdfFiles[0]) {
@@ -129,12 +129,12 @@ async function main() {
     const sectorPath = 'd:/rag-index-tr/data/raw/sector_search2.txt';
     if (fs.existsSync(sectorPath)) {
         console.log(`\nProcessing Sector Search: ${sectorPath}...`);
-        const { parseSectorSearch } = await import('./lib/parsing/sectorParser');
+        const { parseSectorSearch } = await import('../lib/parsing/sectorParser');
         const content = fs.readFileSync(sectorPath, 'utf-8');
         const records = parseSectorSearch(content);
         console.log(`Parsed ${records.length} sector records.`);
 
-        const { storeEmbedding } = await import('./lib/vector/neonDb');
+        const { storeEmbedding } = await import('../lib/vector/neonDb');
 
         for (let i = 0; i < records.length; i++) {
             const record = records[i];
