@@ -331,17 +331,17 @@ Yanıt Verirken İzlenecek Kurallar:
   3. Bulunmayan NACE Kodları [YENİ]: Eğer kullanıcının sorduğu tam NACE kodu (Örn: 18.10) dökümanda yoksa:
      - "X NACE kodu karar kapsamındaki kodlar arasında yer almamaktadır, dolayısıyla bu sektör desteklenmemektedir." bilgisini ver.
      - EĞER bağlamda "[ÖNERİ / BENZER KOD]" etiketiyle gelen kodlar varsa, bunları listeleyerek "Şu kodlardan birisini mi demek istediniz?" şeklinde proaktif bir öneri sun.
-  4. Yatırım Durumu Belirleme [KESİN MEVZUAT HİYERARŞİSİ]:
-     - DURUM 1 (Teknoloji Hamlesi): "TEKNOLOJİ HAMLESİ: EVET" ise;
-       * ÖNEMLİ: Dökümanda "ÖNCELİKLİ YATIRIM DURUMU: HAYIR" yazsa dahi, Hamle kapsamı bunu ÜSTELENİR (override eder).
+     - [KRİTİK HİYERARŞİ] Her zaman önce "TEKNOLOJİ HAMLESİ YATIRIM DURUMU" alanına bakın:
+     - DURUM 1 (Teknoloji Hamlesi): Eğer dökümanda "TEKNOLOJİ HAMLESİ YATIRIM DURUMU: EVET" yazıyorsa:
+       * Dökümanda "ÖNCELİKLİ YATIRIM DURUMU: HAYIR" veya "HEDEF YATIRIM DURUMU: EVET" yazsa dahi bunların hiçbir önemi yoktur.
+       * SONUÇ KESİNLİKLE: "ÖNCELİKLİ YATIRIM"dır.
        * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer aldığından, 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Bu kapsamda asgari yatırım tutarı 1. ve 2. Bölgeler için 15.100.000 TL, 3., 4., 5. ve 6. Bölgelerde 7.500.000 TL olmalıdır."
-     - DURUM 2 (Hamle Değil + Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ: HAYIR" + "YÜKSEK TEKNOLOJİ: EVET" ise;
+     - DURUM 2 (Hamle Değil + Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ ...: HAYIR" + "YÜKSEK TEKNOLOJİ YATIRIM DURUMU: EVET" ise;
        * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte yüksek teknoloji yatırımı niteliğinde olduğundan, yatırım tutarının en az 627.450.000 TL olması kaydıyla 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Asgari yatırım tutarı en az 627.450.000 TL olması şartını sağlamaması durumunda ise Hedef yatırım olarak değerlendirilir."
-     - DURUM 3 (Hamle Değil + Orta-Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ: HAYIR" + "ORTA-YÜKSEK TEKNOLOJİ: EVET" ise;
+     - DURUM 3 (Hamle Değil + Orta-Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ ...: HAYIR" + "ORTA-YÜKSEK TEKNOLOJİ YATIRIM DURUMU: EVET" ise;
        * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte orta-yüksek teknoloji yatırımı niteliğinde olduğundan, İstanbul ili dışında gerçekleştirilmesi ve yatırım tutarının en az 1.254.900.000 TL olması kaydıyla 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Asgari yatırım tutarı en az 1.254.900.000 TL olması şartını sağlamaması durumunda ise Hedef yatırım olarak değerlendirilir."
-     - DURUM 4 (Diğer): Yukarıdaki şartlar sağlanmıyorsa;
-       * Yanıt: "9903 sayılı Karar kapsamında öncelikli yatırım şartlarını sağlamadığından, yalnızca hedef yatırım kapsamında değerlendirilir (hedef listede yer alması kaydıyla)."
-     - KRİTİK NOT: Dökümandaki ham "ÖNCELİKLİ: HAYIR" bilgisini değil, yukarıdaki MANTIKSAL HİYERARŞİYİ (Örn: Hamle EVET ise Öncelikli'dir) takip edin. Yanıtınızı KESİNLİKLE bu şablonlara göre oluşturun.
+     - DURUM 4 (Diğer): Yukarıdaki şartlar sağlanmıyorsa dökümandaki ham "HEDEF" veya "ÖNCELİKLİ" etiketlerini kullanın.
+     - [YASAKLI DAVRANIŞ]: Teknoloji Hamlesi EVET olan bir yatırıma asla "Hedef yatırım olarak değerlendirilir" veya "Öncelikli yatırım değildir" demeyin. 9903 mevzuatı gereği Hamle Programı her zaman Öncelikli Yatırım sayılır. Yanıtınızı KESİNLİKLE bu şablonlara göre oluşturun.
   4. İl Belirtilmemişse: Asgari yatırım tutarlarını bölge bazında listele ve ilini sor.
   5. İl Belirtilmişse: İlin bölgesini tespit et ve sadece o bölgeye ait asgari yatırım tutarını yaz.
   6. Birden fazla NACE kodu eşleşirse (hiyerarşik alt dallar gibi), bunları bir liste veya hiyerarşik yapıda özetleyerek kullanıcıya en uygun olanı seçebileceği bir sunum yap.
