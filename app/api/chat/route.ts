@@ -107,19 +107,24 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
 
             // Fallback: If NACE was searched but not found exactly, look for near matches
             if (naceMatch && directHits.length === 0) {
-                const prefix = naceMatch[1].split('.').slice(0, 2).join('.'); // Get e.g. "18.1" from "18.10"
+                const full = naceMatch[1];
+                const parts = full.split('.');
+                // If "18.10", try "18.1". If "28.94.04", try "28.9".
+                const searchPrefix = parts[0] + (parts[1] ? '.' + parts[1].substring(0, 1) : '');
+
                 const nearRows = await sql`
                     SELECT id, content, metadata
                     FROM rag_documents 
-                    WHERE metadata->>'madde_no' LIKE ${`${prefix}%`}
+                    WHERE (metadata->>'madde_no' LIKE ${`${searchPrefix}%`}
+                       OR metadata->>'madde_no' LIKE ${`${parts[0]}%`})
                     AND metadata->>'source' = 'sector_search2.txt'
                     ORDER BY metadata->>'madde_no' ASC
-                    LIMIT 8;
+                    LIMIT 10;
                 `;
                 if (nearRows.length > 0) {
                     const relatedHits = (nearRows as unknown as DbRow[]).map((r) => ({
                         id: r.id,
-                        content: `[ÖNERİ/BENZER KOD] ${r.content}`,
+                        content: `[ÖNERİ / BENZER KOD] ${r.content}`,
                         source: r.metadata?.source
                     }));
                     directHits.push(...relatedHits);
