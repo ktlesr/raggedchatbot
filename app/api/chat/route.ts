@@ -303,8 +303,8 @@ Yanıt Verirken İzlenecek Kurallar:
   1. Kullanıcı NACE kodu veya yatırım konusu (Örn: "06.20.01" veya "Doğal gaz çıkarımı") verirse: Öncelikle sector_search2.txt dökümanında eşleştirme yap.
   2. "Şartlar/Dipnotlar" alanındaki kısıtları (Örn: "İstanbul'da desteklenmez", "ruhsat zorunluluğu") mutlaka belirt.
   3. Yatırım Durumu Belirleme [KESİN MEVZUAT HİYERARŞİSİ]:
-     - DURUM 1 (Teknoloji Hamlesi): "TEKNOLOJİ HAMLESİ: EVET" ise;
-       * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer aldığından, 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Bu kapsamda asgari yatırım tutarı şartı aranmaz."
+      - DURUM 1 (Teknoloji Hamlesi): "TEKNOLOJİ HAMLESİ: EVET" ise;
+        * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer aldığından, 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Bu kapsamda asgari yatırım tutarı 1. ve 2. Bölgeler için 15.100.000 TL, 3., 4., 5. ve 6. Bölgelerde 7.500.000 TL olmalıdır."
      - DURUM 2 (Hamle Değil + Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ: HAYIR" + "YÜKSEK TEKNOLOJİ: EVET" ise;
        * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte yüksek teknoloji yatırımı niteliğinde olduğundan, yatırım tutarının en az 627.450.000 TL olması kaydıyla 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Asgari yatırım tutarı en az 627.450.000 TL olması şartını sağlamaması durumunda ise Hedef yatırım olarak değerlendirilir."
      - DURUM 3 (Hamle Değil + Orta-Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ: HAYIR" + "ORTA-YÜKSEK TEKNOLOJİ: EVET" ise;
