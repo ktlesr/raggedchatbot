@@ -152,8 +152,8 @@ function parseDefinitions(text: string): Tanimlar {
 }
 
 function fallbackParse(normalized: string, result: BelgeYapisal) {
-    // Combine major headings and HIT- markers for splitting
-    const blocks = normalized.split(/(?=HIT\-[\s\n]*[A-Z0-9]|AKTİF\s+AÇIK\s+ÇAĞRILAR|SONA\s+ERMİŞ\s+ÇAĞRILAR)/gi);
+    // Combine major headings, HIT- markers, and NACE markers for splitting
+    const blocks = normalized.split(/(?=HIT\-[\s\n]*[A-Z0-9]|AKTİF\s+AÇIK\s+ÇAĞRILAR|SONA\s+ERMİŞ\s+ÇAĞRILAR|NACE\s+KODU:)/gi);
 
     let currentCategory = "";
 
@@ -184,7 +184,16 @@ function fallbackParse(normalized: string, result: BelgeYapisal) {
         }
 
         const isHitBlock = title.toUpperCase().startsWith("HIT-");
-        const maddeNo = isHitBlock ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
+        const isNaceBlock = title.toUpperCase().startsWith("NACE KODU:");
+
+        let maddeNo = isHitBlock ? title.substring(0, 50) : (idx === 0 ? "Giriş" : `Bölüm ${idx}`);
+
+        if (isNaceBlock) {
+            const naceNum = title.match(/NACE\s+KODU:\s*([0-9\.]+)/i);
+            if (naceNum) {
+                maddeNo = naceNum[1];
+            }
+        }
 
         // Context Injection
         let finalContent = trimmed;

@@ -78,10 +78,11 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
     let directHits: SearchResult[] = [];
     const isDefinitionQuery = /tanim|nedir|ne\s*demek|un\s*anlami/i.test(normalizedQuery);
     const maddeMatch = query.match(/madde\s*(\d+)/i);
+    const naceMatch = query.match(/(\d{2}(?:\.\d{1,2}){1,2})/); // Matches 03.2, 01.41, 28.94.04 etc.
 
     try {
-        if (maddeMatch || (isDefinitionQuery && activeSourceHints.length > 0)) {
-            const maddeNo = maddeMatch ? maddeMatch[1] : "2"; // Default to definitions if it's a definition query
+        if (maddeMatch || naceMatch || (isDefinitionQuery && activeSourceHints.length > 0)) {
+            const maddeNo = maddeMatch ? maddeMatch[1] : (naceMatch ? naceMatch[1] : "2");
             const safeMaddeNo = maddeNo.replace(/\s+/g, '_');
             const sourceFilter = activeSourceHints.length > 0
                 ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0]}%`}`
@@ -91,8 +92,9 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 SELECT id, content, metadata
                 FROM rag_documents 
                 WHERE (id ILIKE ${`%madde_${safeMaddeNo}`} 
-                   OR id ILIKE ${`%madde_${safeMaddeNo}_p_%`}
-                   OR id ILIKE ${`%madde_Geçici_${safeMaddeNo}%`})
+                   OR id ILIKE ${`%madde_${safeMaddeNo}_part_%`}
+                   OR id ILIKE ${`%madde_Geçici_${safeMaddeNo}%`}
+                   OR metadata->>'madde_no' = ${maddeNo})
                    ${sourceFilter}
                 ORDER BY id ASC
                 LIMIT 15;
@@ -304,9 +306,10 @@ Yanıt Verirken İzlenecek Kurallar:
   4. İl Belirtilmemişse: Asgari yatırım tutarlarını bölge bazında listele ve ilini sor.
   5. İl Belirtilmişse: İlin bölgesini tespit et ve sadece o bölgeye ait asgari yatırım tutarını yaz.
   6. Birden fazla NACE kodu eşleşirse (hiyerarşik alt dallar gibi), bunları bir liste veya hiyerarşik yapıda özetleyerek kullanıcıya en uygun olanı seçebileceği bir sunum yap.
-  7. Asgari Yatırım Tutarları [KESİN KURAL]: Bölgeleri listelerken dökümandaki bölge numaralarına (1, 2, 3, 4, 5, 6) BİREBİR sadık kal. Her satırın başına "1." yazma hatasına düşme. Aynı tutara sahip olan bölgeleri "X. ve Y. Bölgeler" veya "X, Y, Z ve T. Bölgeler" şeklinde gruplandır. 
-     - Örn: "1. ve 2. Bölgeler: 12.000.000 TL", "3, 4, 5 ve 6. Bölgeler: 6.000.000 TL".
-     - DİKKAT: Bölge rakamlarının (3, 4, 5, 6) doğruluğunu dökümandan teyit et.
+  7. Asgari Yatırım Tutarları [KRİTİK]: Dökümanda bölge numaraları "1. Bölge...", "2. Bölge...", "3. Bölge..." şeklinde sıralıdır. Bu numaralara KESİNLİKLE sadık kalın. 
+     - HATA ÖNLEME: Tüm bölgeleri "1. Bölge" olarak yazmayın. Her bölgenin kendi numarasını (1'den 6'ya kadar) kullandığınızdan emin olun.
+     - GRUPLAMA: Aynı tutara sahip olan bölgeleri "1. ve 2. Bölgeler: 15.100.000 TL", "3, 4, 5 ve 6. Bölgeler: 7.500.000 TL" şeklinde birleştirerek yazın.
+     - DİKKAT: Bölge rakamlarının dökümandaki karşılığını (1, 2, 3, 4, 5, 6) tek tek kontrol edin.
 - [HIT-30 ÖZEL KURALLARI]
   1. Kullanıcı aktif veya kapalı/sona ermiş çağrıları sorduğunda, bağlamdaki DURUM etiketlerine (AKTİF/KAPALI) KESİNLİKLE uyun.
   2. Bir çağrının (Örn: HIT-Solar) kapalı olduğu belirtilmişse, "Bilgi yok" demek yerine dökümandaki o çağrıya ait bilgileri kullanarak "Bu çağrı sona ermiştir" bilgisini verin.
