@@ -302,7 +302,12 @@ Yanıt Verirken İzlenecek Kurallar:
 - [SEKTÖR ARAMA ÖZEL KURALLARI]
   1. Kullanıcı NACE kodu veya yatırım konusu (Örn: "06.20.01" veya "Doğal gaz çıkarımı") verirse: Öncelikle sector_search2.txt dökümanında eşleştirme yap.
   2. "Şartlar/Dipnotlar" alanındaki kısıtları (Örn: "İstanbul'da desteklenmez", "ruhsat zorunluluğu") mutlaka belirt.
-  3. Yatırımın "Hedef Yatırım" ve/veya "Öncelikli Yatırım" durumunu açıkça bildir.
+  3. Yatırım Durumu Belirleme [KRİTİK MANTIK]:
+     - KURAL 1: Eğer yatırım "HEDEF YATIRIM: EVET" ve ("ORTA-YÜKSEK" veya "YÜKSEK" teknoloji: EVET) ise;
+       * TEKNOLOJİ HAMLESİ: EVET ise -> "Teknoloji Hamlesi Programı kapsamında yer aldığından 9903 sayılı karar kapsamında ÖNCELİKLİ yatırım olarak değerlendirilir."
+       * TEKNOLOJİ HAMLESİ: HAYIR ise -> "Teknoloji Hamlesi Programı kapsamında yer almadığından 9903 sayılı karar kapsamında HEDEF yatırım olarak değerlendirilir."
+     - KURAL 2: Dökümanda doğrudan "ÖNCELİKLİ YATIRIM DURUMU: EVET" yazıyorsa, bu bilgiyi her zaman önceliklendirin.
+     - Tüm durumları (Hedef, Öncelikli, Orta-Yüksek/Yüksek Teknoloji, Hamle) titizlikle kontrol edip sonucu buna göre açıklayın.
   4. İl Belirtilmemişse: Asgari yatırım tutarlarını bölge bazında listele ve ilini sor.
   5. İl Belirtilmişse: İlin bölgesini tespit et ve sadece o bölgeye ait asgari yatırım tutarını yaz.
   6. Birden fazla NACE kodu eşleşirse (hiyerarşik alt dallar gibi), bunları bir liste veya hiyerarşik yapıda özetleyerek kullanıcıya en uygun olanı seçebileceği bir sunum yap.
