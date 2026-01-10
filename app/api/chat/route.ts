@@ -104,6 +104,27 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 content: r.content,
                 source: r.metadata?.source
             }));
+
+            // Fallback: If NACE was searched but not found exactly, look for near matches
+            if (naceMatch && directHits.length === 0) {
+                const prefix = naceMatch[1].split('.').slice(0, 2).join('.'); // Get e.g. "18.1" from "18.10"
+                const nearRows = await sql`
+                    SELECT id, content, metadata
+                    FROM rag_documents 
+                    WHERE metadata->>'madde_no' LIKE ${`${prefix}%`}
+                    AND metadata->>'source' = 'sector_search2.txt'
+                    ORDER BY metadata->>'madde_no' ASC
+                    LIMIT 8;
+                `;
+                if (nearRows.length > 0) {
+                    const relatedHits = (nearRows as unknown as DbRow[]).map((r) => ({
+                        id: r.id,
+                        content: `[ÖNERİ/BENZER KOD] ${r.content}`,
+                        source: r.metadata?.source
+                    }));
+                    directHits.push(...relatedHits);
+                }
+            }
         }
     } catch (e) {
         console.error("Direct hit search failed", e);
@@ -302,7 +323,10 @@ Yanıt Verirken İzlenecek Kurallar:
 - [SEKTÖR ARAMA ÖZEL KURALLARI]
   1. Kullanıcı NACE kodu veya yatırım konusu (Örn: "06.20.01" veya "Doğal gaz çıkarımı") verirse: Öncelikle sector_search2.txt dökümanında eşleştirme yap.
   2. "Şartlar/Dipnotlar" alanındaki kısıtları (Örn: "İstanbul'da desteklenmez", "ruhsat zorunluluğu") mutlaka belirt.
-  3. Yatırım Durumu Belirleme [KESİN MEVZUAT HİYERARŞİSİ]:
+  3. Bulunmayan NACE Kodları [YENİ]: Eğer kullanıcının sorduğu tam NACE kodu (Örn: 18.10) dökümanda yoksa:
+     - "X NACE kodu karar kapsamındaki kodlar arasında yer almamaktadır, dolayısıyla bu sektör desteklenmemektedir." bilgisini ver.
+     - EĞER bağlamda "[ÖNERİ / BENZER KOD]" etiketiyle gelen kodlar varsa, bunları listeleyerek "Şu kodlardan birisini mi demek istediniz?" şeklinde proaktif bir öneri sun.
+  4. Yatırım Durumu Belirleme [KESİN MEVZUAT HİYERARŞİSİ]:
      - DURUM 1 (Teknoloji Hamlesi): "TEKNOLOJİ HAMLESİ: EVET" ise;
        * ÖNEMLİ: Dökümanda "ÖNCELİKLİ YATIRIM DURUMU: HAYIR" yazsa dahi, Hamle kapsamı bunu ÜSTELENİR (override eder).
        * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer aldığından, 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Bu kapsamda asgari yatırım tutarı 1. ve 2. Bölgeler için 15.100.000 TL, 3., 4., 5. ve 6. Bölgelerde 7.500.000 TL olmalıdır."
