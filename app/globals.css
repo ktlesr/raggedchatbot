@@ -71,6 +71,58 @@
     --input: #1e293b;
     --ring: #6366f1;
   }
+
+  /* Regulatory Dashboard Aesthetic - Sober, Data-first, Disciplined */
+  .aesthetic-regulatory {
+    --background: #ffffff;
+    --foreground: #0f172a; /* Dark Slate to pop on white */
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    --primary: #1e293b; /* Slate 800 - Heavy, professional */
+    --primary-foreground: #ffffff;
+    --secondary: #f1f5f9;
+    --secondary-foreground: #334155;
+    --muted: #f8fafc;
+    --muted-foreground: #475569;
+    --accent: #f1f5f9;
+    --accent-foreground: #0f172a;
+    --destructive: #991b1b;
+    --destructive-foreground: #fef2f2;
+    --border: #cbd5e1;
+    --input: #cbd5e1;
+    --ring: #1e293b;
+    --radius: 0rem; /* Strictly sharp edges for a very disciplined look */
+
+    /* Disciplined, tight spacing and shadows */
+    --radius-xl: 0.125rem;
+    --radius-lg: 0.0625rem;
+    --radius-md: 0px;
+    --radius-sm: 0px;
+  }
+
+  .aesthetic-regulatory.dark {
+    --background: #020617;
+    --foreground: #f8fafc;
+    --card: #0f172a;
+    --card-foreground: #f8fafc;
+    --popover: #020617;
+    --popover-foreground: #f8fafc;
+    --primary: #cbd5e1; /* Slate 300 - Bright enough to show on dark bg but professional */
+    --primary-foreground: #020617; /* Dark text on bright primary */
+    --secondary: #1e293b;
+    --secondary-foreground: #f1f5f9;
+    --muted: #1e293b;
+    --muted-foreground: #94a3b8;
+    --accent: #1e293b;
+    --accent-foreground: #f1f5f9;
+    --destructive: #ef4444;
+    --destructive-foreground: #f8fafc;
+    --border: #1e293b;
+    --input: #1e293b;
+    --ring: #cbd5e1;
+  }
 }
 
 @layer base {

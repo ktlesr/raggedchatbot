@@ -17,6 +17,7 @@ import MainLayout from "@/components/MainLayout";
 import { AuthProvider } from "@/lib/context/AuthContext";
 import { CaptchaProvider } from "@/components/CaptchaProvider";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { AestheticProvider } from "@/lib/context/AestheticContext";
 
 export const metadata: Metadata = {
   title: {
@@ -78,11 +79,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <CaptchaProvider>
-            <AuthProvider>
-              <MainLayout>{children}</MainLayout>
-            </AuthProvider>
-          </CaptchaProvider>
+          <AestheticProvider>
+            <CaptchaProvider>
+              <AuthProvider>
+                <MainLayout>{children}</MainLayout>
+              </AuthProvider>
+            </CaptchaProvider>
+          </AestheticProvider>
         </ThemeProvider>
       </body>
     </html>

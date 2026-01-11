@@ -133,7 +133,7 @@ export default function ChatInterface() {
       {/* Header */}
       <div className="h-16 px-4 md:px-8 flex items-center justify-between border-b border-border bg-background/80 backdrop-blur-sm z-10 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg">
             <MessageSquare size={20} />
           </div>
           <div>
@@ -187,8 +187,8 @@ export default function ChatInterface() {
                     className={cn(
                       "p-4 md:p-5 rounded-3xl text-[14px] md:text-[15px] leading-relaxed",
                       m.role === "user"
-                        ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/20"
-                        : "bg-secondary text-foreground rounded-tl-none border border-border",
+                        ? "bg-primary text-primary-foreground rounded-tr-none shadow-lg shadow-primary/20"
+                        : "bg-secondary text-secondary-foreground rounded-tl-none border border-border",
                     )}
                   >
                     {m.role === "bot" ? (

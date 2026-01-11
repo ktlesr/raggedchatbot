@@ -49,12 +49,14 @@ export async function GET() {
         }
 
         const activeModel = await getActiveModel();
+        const activeAesthetic = await import("@/lib/utils/settings").then(m => m.getActiveAesthetic());
 
         return NextResponse.json({
             users,
             feedbacks,
             settings: {
-                activeModel
+                activeModel,
+                aesthetic: activeAesthetic
             },
             stats: {
                 totalDocs,
@@ -83,6 +85,9 @@ export async function PATCH(req: Request) {
             if (!key || !value) return NextResponse.json({ error: "Missing data" }, { status: 400 });
             if (key === "active_model") {
                 await setActiveModel(value);
+            } else if (key === "aesthetic") {
+                const { setActiveAesthetic } = await import("@/lib/utils/settings");
+                await setActiveAesthetic(value);
             }
             return NextResponse.json({ success: true });
         }

@@ -42,3 +42,28 @@ export async function setActiveModel(model: ChatModel) {
     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
   `;
 }
+
+export async function getActiveAesthetic(): Promise<string> {
+  const sql = neon(process.env.DATABASE_URL!);
+  try {
+    const result = await sql`SELECT value FROM site_settings WHERE key = 'aesthetic' LIMIT 1`;
+    if (result.length > 0) {
+      return result[0].value;
+    }
+    // Seed
+    await sql`INSERT INTO site_settings (key, value) VALUES ('aesthetic', 'default') ON CONFLICT (key) DO NOTHING`;
+    return "default";
+  } catch (error) {
+    console.error("Failed to get active aesthetic:", error);
+    return "default";
+  }
+}
+
+export async function setActiveAesthetic(aesthetic: string) {
+  const sql = neon(process.env.DATABASE_URL!);
+  await sql`
+    INSERT INTO site_settings (key, value)
+    VALUES ('aesthetic', ${aesthetic})
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+  `;
+}

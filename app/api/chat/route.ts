@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-import { normalizeTurkish } from "@/lib/utils/text";
-import { searchSimilarDocuments } from "@/lib/vector/neonDb";
-import { neon } from "@neondatabase/serverless";
-import { getActiveModel } from "@/lib/utils/settings";
+import { NextRequest, NextResponse } from 'next/server';
+import OpenAI from 'openai';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { sql } from '@/lib/vector/neonDb';
+import { getEmbedding } from '@/lib/vector/embeddings';
+import { normalizeTurkish } from '@/lib/utils/structuredData';
 
-export const dynamic = 'force-dynamic';
-
-// --- Types ---
+// Types for search results
 interface SearchResult {
     id: string;
     content: string;
@@ -19,47 +16,46 @@ interface SearchResult {
 interface DbRow {
     id: string;
     content: string;
-    metadata?: {
+    metadata: {
         source?: string;
-        [key: string]: unknown;
+        madde_no?: string;
+        nace?: string;
     };
     similarity?: number;
 }
 
-// 1. Get Embedding from OpenAI
-async function getEmbedding(text: string, openai: OpenAI): Promise<number[]> {
-    const response = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: normalizeTurkish(text).replace(/\n/g, " "),
-    });
-    return response.data[0].embedding;
+// Helper to get matching model
+async function getActiveModel() {
+    return process.env.NEXT_PUBLIC_ACTIVE_MODEL || "gpt-4o";
 }
 
-// 2. Find Relevant Chunks (Hybrid Search)
-async function findRelevantContext(query: string, openai: OpenAI): Promise<string> {
-    const sql = neon(process.env.DATABASE_URL!);
+async function searchSimilarDocuments(embedding: number[], limit: number = 10) {
+    try {
+        const results = await sql`
+            SELECT id, content, metadata, 1 - (embedding <=> ${JSON.stringify(embedding)}::vector) as similarity
+            FROM rag_documents
+            ORDER BY embedding <=> ${JSON.stringify(embedding)}::vector
+            LIMIT ${limit};
+        `;
+        return results;
+    } catch (e) {
+        console.error("Vector search specifically failed:", e);
+        return [];
+    }
+}
+
+async function findRelevantContext(query: string, openai: OpenAI) {
     const normalizedQuery = normalizeTurkish(query);
+    const words = normalizedQuery.split(/\s+/);
 
-    // 1. Detect Source Hints
-    const sourcePatterns = [
-        { key: "9903", pattern: /9903/ },
-        { key: "proje_bazli", pattern: /9495|proje\s*bazli/i },
-        { key: "ytak", pattern: /ytak/i },
-        { key: "hit30", pattern: /hit-?30|acik\s*cagri|aktif\s*cagri|sona\s*ermis|kapali\s*cagri/i },
-        { key: "cmp", pattern: /cmp|cazibe/i },
-        { key: "sector_search", pattern: /nace|yatirim\s*konusu|asgari\s*yatirim|kategorisi|sektor/i },
-    ];
+    // Detect potential source hints
+    const sourceHints = ["9903", "HIT30", "YTAK", "Proje_Bazli", "Cazibe", "CMP", "9495"];
+    const activeSourceHints = sourceHints.filter(hint => normalizedQuery.includes(normalizeTurkish(hint)));
 
-    const activeSourceHints = sourcePatterns
-        .filter(p => p.pattern.test(normalizedQuery))
-        .map(p => p.key);
+    const searchTerms = words
+        .filter((w: string) => w.length > 3 && !["sayili", "karar", "karari", "gore", "oldugu", "hakkinda"].includes(w));
 
-    // 2. Extract meaningful search terms (remove short words)
-    const searchTerms = normalizedQuery
-        .split(/\s+/)
-        .filter(w => w.length > 3 && !["sayili", "karar", "karari", "gore", "oldugu", "hakkinda"].includes(w));
-
-    // A. Vector Search (Unfiltered but we'll prioritize later)
+    // A. Vector Search
     const queryEmbedding = await getEmbedding(query, openai);
     let vectorResults: SearchResult[] = [];
     try {
@@ -74,16 +70,29 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         console.error("Vector search failed", e);
     }
 
-    // B. Direct Article Lookup (Prioritizing Article 2 if "tanim" or "nedir" is in query)
+    // B. Direct Article Lookup
     let directHits: SearchResult[] = [];
     const isDefinitionQuery = /tanim|nedir|ne\s*demek|un\s*anlami/i.test(normalizedQuery);
     const maddeMatch = query.match(/madde\s*(\d+)/i);
-    const naceMatch = query.match(/(\d{2}(?:\.\d{1,2}){1,2})/); // Matches 03.2, 01.41, 28.94.04 etc.
+
+    // Improved NACE detection & normalization
+    let normalizedNace: string | null = null;
+    const naceRawMatch = query.match(/\b(?:\d{2}[.\-\s]?){0,2}\d{2}\b/);
+    if (naceRawMatch) {
+        const digits = naceRawMatch[0].replace(/[^0-9]/g, '');
+        if (digits.length === 2) {
+            normalizedNace = digits;
+        } else if (digits.length === 4) {
+            normalizedNace = `${digits.substring(0, 2)}.${digits.substring(2, 4)}`;
+        } else if (digits.length === 6) {
+            normalizedNace = `${digits.substring(0, 2)}.${digits.substring(2, 4)}.${digits.substring(4, 6)}`;
+        }
+    }
 
     try {
-        if (maddeMatch || naceMatch || (isDefinitionQuery && activeSourceHints.length > 0)) {
-            const maddeNo = maddeMatch ? maddeMatch[1] : (naceMatch ? naceMatch[1] : "2");
-            const safeMaddeNo = maddeNo.replace(/\s+/g, '_');
+        if (maddeMatch || normalizedNace || (isDefinitionQuery && activeSourceHints.length > 0)) {
+            const searchId = maddeMatch ? maddeMatch[1] : (normalizedNace ? normalizedNace : "2");
+            const safeSearchId = searchId.replace(/\s+/g, '_');
             const sourceFilter = activeSourceHints.length > 0
                 ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0]}%`}`
                 : sql``;
@@ -91,10 +100,10 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
             const rows = await sql`
                 SELECT id, content, metadata
                 FROM rag_documents 
-                WHERE (id ILIKE ${`%madde_${safeMaddeNo}`} 
-                   OR id ILIKE ${`%madde_${safeMaddeNo}_part_%`}
-                   OR id ILIKE ${`%madde_Geçici_${safeMaddeNo}%`}
-                   OR metadata->>'madde_no' = ${maddeNo})
+                WHERE (id ILIKE ${`%madde_${safeSearchId}`} 
+                   OR id ILIKE ${`%madde_${safeSearchId}_part_%`}
+                   OR id ILIKE ${`%madde_Geçici_${safeSearchId}%`}
+                   OR metadata->>'madde_no' = ${searchId})
                    ${sourceFilter}
                 ORDER BY id ASC
                 LIMIT 15;
@@ -105,11 +114,8 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
                 source: r.metadata?.source
             }));
 
-            // Fallback: If NACE was searched but not found exactly, look for near matches
-            if (naceMatch && directHits.length === 0) {
-                const full = naceMatch[1];
-                const parts = full.split('.');
-                // If "18.10", try "18.1". If "28.94.04", try "28.9".
+            if (normalizedNace && directHits.length === 0) {
+                const parts = normalizedNace.split('.');
                 const searchPrefix = parts[0] + (parts[1] ? '.' + parts[1].substring(0, 1) : '');
 
                 const nearRows = await sql`
@@ -135,57 +141,54 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         console.error("Direct hit search failed", e);
     }
 
-    // C. Smart Keyword Search (Multi-term)
+    // C. Smart Keyword Search
     let keywordHits: SearchResult[] = [];
     if (searchTerms.length > 0) {
         try {
-            // Rank by how many search terms are present
             const sourceFilter = activeSourceHints.length > 0
                 ? sql`AND metadata->>'source' ILIKE ${`%${activeSourceHints[0]}%`}`
                 : sql``;
 
-            // Simple multi-term ILIKE (at least 2 terms or just 1 if only 1 is available)
             const termsToMatch = searchTerms.slice(0, 3);
             let ilikeClause = sql``;
             if (termsToMatch.length === 1) {
-                ilikeClause = sql`unaccent(content) ILIKE unaccent(${`%${termsToMatch[0]}%`})`;
-            } else {
-                ilikeClause = sql`unaccent(content) ILIKE unaccent(${`%${termsToMatch[0]}%`}) AND unaccent(content) ILIKE unaccent(${`%${termsToMatch[1]}%`})`;
+                ilikeClause = sql`content ILIKE ${`%${termsToMatch[0]}%`}`;
+            } else if (termsToMatch.length >= 2) {
+                ilikeClause = sql`content ILIKE ${`%${termsToMatch[0]}%`} AND content ILIKE ${`%${termsToMatch[1]}%`}`;
             }
 
-            // Forcefully look for EK content if query asks for lists/provinces
-            const isListQuery = /liste|hangileri|iller|ilceler|ekler|ekleri/i.test(normalizedQuery);
-            const listClause = isListQuery ? sql`OR id ILIKE '%ek_%'` : sql``;
-
-            const rows = await sql`
-                SELECT id, content, metadata
-                FROM rag_documents 
-                WHERE ((${ilikeClause}) ${listClause})
-                   ${sourceFilter}
-                ORDER BY (id ILIKE '%ek_%') DESC
-                LIMIT 25;
-            `;
-            keywordHits = (rows as unknown as DbRow[]).map((r) => ({
-                id: r.id,
-                content: r.content,
-                source: r.metadata?.source
-            }));
+            if (termsToMatch.length > 0) {
+                const rows = await sql`
+                    SELECT id, content, metadata
+                    FROM rag_documents 
+                    WHERE ${ilikeClause}
+                    ${sourceFilter}
+                    LIMIT 10;
+                `;
+                keywordHits = (rows as unknown as DbRow[]).map((r) => ({
+                    id: r.id,
+                    content: r.content,
+                    source: r.metadata?.source
+                }));
+            }
         } catch (e) {
-            console.error("Multi-term keyword search failed", e);
+            console.error("Keyword search failed", e);
         }
     }
 
     // D. NACE Hierarchy Search
     let naceHits: SearchResult[] = [];
-    const nacePattern = /\b\d{2}(?:\.\d{1,3}){0,3}\b/g;
-    const potentialNaces = query.match(nacePattern);
-
-    if (potentialNaces) {
+    if (normalizedNace) {
         try {
-            for (const n of potentialNaces) {
-                if (["9903", "9495", "2024", "2025", "2023"].includes(n)) continue;
+            const parts = normalizedNace.split('.');
+            const ancestors: string[] = [];
+            let current = "";
+            for (const p of parts) {
+                current = current ? current + "." + p : p;
+                ancestors.push(current);
+            }
 
-                // Generic prefix: if 23.40, also look for 23.4
+            for (const n of ancestors) {
                 const cleanNace = n.endsWith(".00") ? n.slice(0, -3) : (n.endsWith(".0") ? n.slice(0, -2) : n);
 
                 const rows = await sql`
@@ -209,28 +212,17 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
         }
     }
 
-    // E. Final Combination & Source Loyalty Ranking
     const combined = [...naceHits, ...directHits, ...keywordHits, ...vectorResults];
 
-    // Sort logic: 
-    // 1. NACE hits (for sector queries)
-    // 2. Source hinted matches first
-    // 3. Direct article hits second
-    // 4. Vector matches with high similarity
     combined.sort((a, b) => {
-        // Boost NACE matches from sector_search.txt
         const aIsNace = a.id.startsWith("sector_") ? 1 : 0;
         const bIsNace = b.id.startsWith("sector_") ? 1 : 0;
         if (aIsNace !== bIsNace) return bIsNace - aIsNace;
 
-        // Boost strictly hinted matches first
         const aIsHinted = activeSourceHints.some(h => a.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
         const bIsHinted = activeSourceHints.some(h => b.source?.toLowerCase().includes(h.toLowerCase())) ? 1 : 0;
-
-        // If a specific decree is hinted (like 9903), it must win over non-hinted
         if (aIsHinted !== bIsHinted) return bIsHinted - aIsHinted;
 
-        // If both hinted or both not hinted, check for specific "madde" match in query
         const aIsDirect = directHits.some(d => d.id === a.id) ? 1 : 0;
         const bIsDirect = directHits.some(d => d.id === b.id) ? 1 : 0;
         if (aIsDirect !== bIsDirect) return bIsDirect - aIsDirect;
@@ -254,8 +246,20 @@ async function findRelevantContext(query: string, openai: OpenAI): Promise<strin
 
     if (uniqueResults.length === 0) return "";
     return uniqueResults.map((r) => {
+        let finalContent = r.content;
+
+        if (r.source === 'sector_search2.txt') {
+            if (finalContent.includes("TEKNOLOJİ HAMLESİ YATIRIM DURUMU: EVET")) {
+                finalContent = "[SİSTEM UYARISI: BU SEKTÖR TEKNOLOJİ HAMLESİ KAPSAMINDADIR. DURUM 1 KURALINI MUTLAK SURETLE UYGULA!]\n" + finalContent;
+            } else if (finalContent.includes("YÜKSEK TEKNOLOJİ YATIRIM DURUMU: EVET")) {
+                finalContent = "[SİSTEM UYARISI: BU SEKTÖR YÜKSEK TEKNOLOJİDİR. DURUM 2 KURALINI MUTLAK SURETLE UYGULA!]\n" + finalContent;
+            } else if (finalContent.includes("ORTA-YÜKSEK TEKNOLOJİ YATIRIM DURUMU: EVET")) {
+                finalContent = "[SİSTEM UYARISI: BU SEKTÖR ORTA-YÜKSEK TEKNOLOJİDİR. DURUM 3 KURALINI MUTLAK SURETLE UYGULA!]\n" + finalContent;
+            }
+        }
+
         const sourcePrefix = r.source ? `[Kaynak: ${r.source} | ID: ${r.id}]\n` : "";
-        return `${sourcePrefix}${r.content}`;
+        return `${sourcePrefix}${finalContent}`;
     }).join("\n\n---\n\n");
 }
 
@@ -273,86 +277,59 @@ export async function POST(req: NextRequest) {
         }
 
         const openai = new OpenAI();
-        const normalizedMessage = normalizeTurkish(message);
-        const isCorrection = /(yanlış|hatalı|öyle değil|hayır|emin misin|doğru değil|bilmiyorsun)/i.test(normalizedMessage);
-
         const context = await findRelevantContext(message, openai);
 
-        if (isCorrection) {
-            console.log("Correction detected, focusing search...");
-            // Extra logic could be added here if needed
-        }
+        const systemPrompt = `1. BÖLÜM: [BİRİNCİ ÖNCELİKLİ ALGORİTMA - MUTLAK SURETLE UYULACAK]
+Bu silsile, dökümanlardaki ham verilerden ÜSTÜNDÜR. Bağlamda (Context) "[SİSTEM UYARISI]" etiketi gördüğünüzde dökümandaki statik statüleri (Örn: Öncelikli: Hayır) YOK SAYIN ve aşağıdaki kuralları uygulayın:
 
-        const systemPrompt = `Sen, Türkiye'deki yatırım teşvikleri ve devlet yardımları konusunda uzmanlaşmış bir asistansın. Kullanıcı sorularını yanıtlarken elindeki dokümanlar arasında doğru seçim yapmalı ve her bilginin kaynağını (ilgili madde ve dosya adı ile) belirtmelisin. 
+- DURUM 1 (Teknoloji Hamlesi): "[SİSTEM UYARISI: ... TEKNOLOJİ HAMLESİ ...]" etiketi varsa:
+  * Yanıt Paragrafı (ZORUNLU): "**Teknoloji Hamlesi Programı** kapsamında yer aldığından, 9903 sayılı Karar kapsamında **Öncelikli Yatırım** olarak değerlendirilir. Bu kapsamda asgari yatırım tutarı **1. ve 2. Bölgeler için 15.100.000 TL**, **3., 4., 5. ve 6. Bölgeler için 7.500.000 TL** olmalıdır."
 
-1.BÖLÜM: ANA SİSTEM PROMPTU (MASTER SYSTEM PROMPT)
+- DURUM 2 (Yüksek Teknoloji): "[SİSTEM UYARISI: ... YÜKSEK TEKNOLOJİDİR ...]" etiketi varsa:
+  * Yanıt Paragrafı (ZORUNLU): "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte **yüksek teknoloji** yatırımı niteliğinde olduğundan iki farklı teşvik yolu mevcuttur:
+    1. **Öncelikli Yatırım Yolu:** Asgari yatırım tutarının en az **627.000.000 TL** olması kaydıyla 9903 sayılı Karar kapsamında **Öncelikli Yatırım** olarak değerlendirilir.
+    2. **Hedef Yatırım Yolu:** Yatırım tutarının bu limitin altında kalması durumunda ise **Hedef Yatırım** olarak değerlendirilir. Bu durumda asgari tutarlar **1. ve 2. Bölgeler için 15.100.000 TL**, **3., 4., 5. ve 6. Bölgeler için 7.500.000 TL**'dir."
+
+- DURUM 3 (Orta-Yüksek Teknoloji): "[SİSTEM UYARISI: ... ORTA-YÜKSEK TEKNOLOJİDİR ...]" etiketi varsa:
+  * Yanıt Paragrafı (ZORUNLU): "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte **orta-yüksek teknoloji** yatırımı niteliğinde olduğundan iki farklı teşvik yolu mevcuttur:
+    1. **Öncelikli Yatırım Yolu:** Yatırımın **İstanbul ili dışında** gerçekleştirilmesi ve asgari yatırım tutarının en az **1.255.000.000 TL** olması kaydıyla 9903 sayılı Karar kapsamında **Öncelikli Yatırım** olarak değerlendirilir.
+    2. **Hedef Yatırım Yolu:** Bu şartların (tutar veya il) sağlanamaması durumunda yatırım **Hedef Yatırım** olarak değerlendirilir. Bu durumda asgari tutarlar **1. ve 2. Bölgeler için 15.100.000 TL**, **3., 4., 5. ve 6. Bölgeler için 7.500.000 TL**'dir."
+
+2. BÖLÜM: HIT-30 PROGRAMI ÖZEL KURALLARI [KRİTİK]
+- [KAYNAK]: Bu bölümdeki bilgiler münhasıran **hit30.md** dosyasına dayanmaktadır.
+- [KAPSAM AYRIMI]: HIT-30 iki temel katmandan oluşur ve kullanıcı hangisini soruyorsa ona odaklanın:
+  1. **8 Ana Yatırım Alanı ve Konuları**: (Yarı İletkenler, Mobilite, Yeşil Enerji, İleri İmalat, Sağlıklı Yaşam, Dijital Teknolojiler, İletişim ve Uzay, Değer Zinciri). Bu alanların altındaki **detaylı konuları** mutlaka bağlamdaki (hit30.md) listeden çekin.
+  2. **Çağrı Durumları (Aktif/Kapalı)**: Aktif çağrı duyurularını ve kapalı çağrıları aşağıdaki listeye göre verin.
+- [ÇAĞRI LİSTESİ]:
+  * AKTİF / AÇIK ÇAĞRILAR: HIT-Electric Vehicles, HIT-Battery, HIT-Chip, HIT-R&D, HIT-Wind, HIT-Data Center, HIT-AI, HIT-Quantum, HIT-Industrial Robot.
+  * SONA ERMİŞ / KAPALI ÇAĞRILAR: Sadece **HIT-Solar** (Güneş Enerjisi) kapalıdır.
+- [ÖNEMLİ]: İlgili alanda ilan edilmiş aktif bir çağrı olmasa dahi, HIT-30 kapsamındaki 8 ana teknoloji alanındaki konulara her zaman başvuru yapılabilmektedir.
+- [YASAK]: Döküman başlıklarını (Örn: "Sağlanacak Destekler") çağrı ismi olarak sunmayın.
+- [GÜNCEL BİLGİ]: Destekler, sabit yatırım tutarının %100'üne kadar ulaşabilir.
+
+3. BÖLÜM: ANA SİSTEM PROMPTU (MASTER SYSTEM PROMPT)
 Rol: Sen, Türkiye'de yatırımlar için yatırımcılara uygulanan devlet teşviklerine tamamen hakim bir "Yatırım Teşvik ve Devlet Yardımları Danışmanı"sın. Amacın, kullanıcıların yatırım teşvikleri, YTAK kredileri, HIT-30 programı ve ilgili mevzuat hakkındaki sorularını, sağlanan dökümanlara dayanarak yanıtlamaktır.
 
 Temel Kurallar:
-- Sadece Sağlanan Kaynakları Kullan: Cevaplarını yalnızca sana yüklenen bilgi tabanındaki dökümanlara dayandır. Tipik internet bilgisini karıştırma.
-- Mevzuat Hiyerarşisi: "Karar" ana hukuk kaynağıdır; "Tebliğ/Yönetmelik/Talimat" ise uygulama detaylarını açıklar. Çelişki durumunda güncel olan "Karar" hükmünü esas al.
-- Kesin Atıf Zorunluluğu: Her bilginin sonuna [Kaynak: Dosya Adı, Madde X] formatında atıf yap.
+- Sadece Sağlanan Kaynakları Kullan: Cevaplarını yalnızca sana yüklenen bilgi tabanındaki dökümanlara dayandır.
+- Mevzuat Hiyerarşisi: "Karar" ana hukuk kaynağıdır; "Tebliğ" uygulama detaylarını açıklar.
+- [KRİTİK]: Yukarıdaki BİRİNCİ ÖNCELİKLİ ALGORİTMA ve HIT-30 KURALLARI, dökümandaki ham kelimelerden daha değerlidir.
+- [YTAK]: "YTAK bir yatırım teşviki değil, finansman/kredi mekanizmasıdır" vurgusunu her zaman yapın.
 
-2. BÖLÜM: DÖKÜMAN TANIMLAYICILARI (DOCUMENT CONTEXTS)
-Döküman 1: 9903_karar.pdf (Yatırımlarda Devlet Yardımları Hakkında Karar) - Genel/Bölgesel/Öncelikli/Stratejik teşviklerin ana çatı kararı.
-Döküman 2: 2025-1-9903_teblig.pdf - 9903 Kararı'nın uygulama usul ve esasları (E-TUYS, tamamlama vizesi vb.).
-Döküman 3: 2016-9495_Proje_Bazli.pdf - Büyük ölçekli ve stratejik yatırımlar için "Proje Bazlı" desteklerin ana kararı.
-Döküman 4: 2019-1_9495_teblig.pdf - Proje Bazlı kararın uygulama ve ödeme detayları.
-Döküman 5: ytak.pdf - TCMB Yatırım Taahhütlü Avans Kredisi (YTAK) uygulama talimatı.
-Döküman 6: ytak_hesabi.pdf - YTAK faiz oranı ve indirim puanı hesaplama teknik dökümanı.
-Döküman 7: HIT30.pdf - Yüksek teknoloji yatırımları (HIT-30) program rehberi. "AKTİF AÇIK ÇAĞRILAR" ve "SONA ERMİŞ (KAPALI) ÇAĞRILAR" tablolarını içerir (Elektrikli Araç, Batarya, Çip, Rüzgar, Güneş, Yapay Zeka, Kuantum vb.). Kullanıcı aktif veya kapalı/sona ermiş çağrıları sorduğunda bu dökümana bak. Aranan çağrının DURUM bilgisi (Aktif/Kapalı) döküman içeriğinde belirtilmiştir.
-Döküman 8: cmp1.pdf - Cazibe Merkezleri Programı ana çatısıdır ve programın temel kapsamını oluşturur.
-Döküman 9: cmp_teblig.pdf - Cazibe Merkezleri Programı (CMP) kapsamındaki temel konuların işleyişini ve detaylarını sunar.
-Döküman 10: sector_search2.txt (Sektörel Referans Tablosu) - NACE kodu ve yatırım konusu bazında yatırımın kategorisini (Hedef, Öncelikli, Teknoloji seviyesi vb.), şartlarını ve bölgelere göre asgari yatırım tutarlarını belirlemek için kullanılır. Kullanıcı NACE veya yatırım konusu sorduğunda BURAYA BAK.
+4. BÖLÜM: DÖKÜMAN TANIMLAYICILARI (CONTEXTS)
+Döküman 1: 9903_karar.pdf - Genel teşvik rejimi ana kararı.
+Döküman 2: 2025-1-9903_teblig.pdf - 9903 uygulama detayları.
+Döküman 7: hit30.md - Yüksek Teknoloji Yatırım Programı (HIT-30) güncel rehberi.
+Döküman 10: sector_search2.txt - NACE kodu bazlı yatırım kategorileri.
 
-3. BÖLÜM: ORTAK DESTEK UNSURLARI YÖNETİMİ (KRİTİK)
-“DESTEK UNSURU ≠ TEK KAYNAK”. KDV istisnası, Vergi indirimi, Faiz desteği gibi unsurlar her rejimde farklı uygulanır.
+5. BÖLÜM: SEKTÖR ARAMA ÖZEL KURALLARI
+- Bölge ve Tutarlar [ZORUNLU FORMAT]:
+  * Tüm bölgelere "1. Bölge" yazmak YASAKTIR.
+  * Şablon: **1. ve 2. Bölgeler:** 15.100.000 TL | **3., 4., 5. ve 6. Bölgeler:** 7.500.000 TL.
 
-A. Rejim Belirtilmemişse: 
-- Desteği genel başlıkta tanımla.
-- Rejimler arası farkı (Genel, Proje Bazlı, HIT-30 vb.) vurgula.
-- Netleştirici soru sor: “Hangi teşvik rejimi kapsamında öğrenmek istersiniz?”
-
-B. Kaynak Eşleşme Haritası:
-- KDV / Gümrük Muafiyeti: 9903 (Genel), 2016-9495 (Proje Bazlı), HIT30 (Program bazlı).
-- Vergi İndirimi: 9903 (Yatırıma katkı oranı/vergi indirim oranı), 2016-9495 (Özel oranlar).
-- Faiz / Kâr Payı Desteği: 9903 (Klasik teşvik yardımı), ytak.pdf (DİKKAT: YTAK bir teşvik değil, finansman aracıdır).
-- SGK Primi: 9903 (İşveren hissesi), Cazibe Merkezleri (CMP - daha geniş kapsam).
-- Enerji Desteği: Sadece Proje Bazlı (2016-9495) ve Cazibe Merkezleri (CMP) kapsamındadır.
-
-Yanıt Verirken İzlenecek Kurallar:
-- Kaynak Sadakati (Source Loyalty) [KRİTİK]: Eğer kullanıcı sorusunda belirli bir Karar veya dosya adı (Örn: "9903", "HIT-30", "YTAK", "Proje Bazlı", "9495") belirtmişse, cevabını MÜNHASIRAN (yalnızca) o kaynağa dayandır. Diğer dökümanlarda (Örn: Proje Bazlı Karar'da) Madde 12 "Yatırım Yeri Tahsisi" olabilir, ancak kullanıcı "9903" sormuşsa o 12. maddeyi KESİNLİKLE kullanma, 9903'teki ilgili maddeye (Madde 21) git. Eğer aranan bilgi belirtilen kaynakta yoksa "Belirttiğiniz 9903 sayılı kararda bu konuda bilgi bulunmamaktadır" de.
-- Zorunlu Netlik Cümlesi: "Bu destek unsuru, teşvik rejimine göre farklı koşullarla uygulanmaktadır." veya "Bu açıklama yalnızca [Karar No] kapsamındaki uygulamayı ifade eder." cümlelerini benzer destekler (KDV, Vergi, Yer Tahsisi vb.) için mutlaka kullan.
-- YTAK Vurgusu: YTAK ile ilgili cevaplarda "Bu bir yatırım teşviki değil, finansman/kredi mekanizmasıdır" ibaresini ekle.
-- Bölgesel Ayrım: İllerin teşvik bölgesi için 9903_karar.pdf EK-2'ye bak.
-- [SEKTÖR ARAMA ÖZEL KURALLARI]
-  1. Kullanıcı NACE kodu veya yatırım konusu (Örn: "06.20.01" veya "Doğal gaz çıkarımı") verirse: Öncelikle sector_search2.txt dökümanında eşleştirme yap.
-  2. "Şartlar/Dipnotlar" alanındaki kısıtları (Örn: "İstanbul'da desteklenmez", "ruhsat zorunluluğu") mutlaka belirt.
-  3. Bulunmayan NACE Kodları [YENİ]: Eğer kullanıcının sorduğu tam NACE kodu (Örn: 18.10) dökümanda yoksa:
-     - "X NACE kodu karar kapsamındaki kodlar arasında yer almamaktadır, dolayısıyla bu sektör desteklenmemektedir." bilgisini ver.
-     - EĞER bağlamda "[ÖNERİ / BENZER KOD]" etiketiyle gelen kodlar varsa, bunları listeleyerek "Şu kodlardan birisini mi demek istediniz?" şeklinde proaktif bir öneri sun.
-     - [KRİTİK HİYERARŞİ] Her zaman önce "TEKNOLOJİ HAMLESİ YATIRIM DURUMU" alanına bakın:
-     - DURUM 1 (Teknoloji Hamlesi): Eğer dökümanda "TEKNOLOJİ HAMLESİ YATIRIM DURUMU: EVET" yazıyorsa:
-       * Dökümanda "ÖNCELİKLİ YATIRIM DURUMU: HAYIR" veya "HEDEF YATIRIM DURUMU: EVET" yazsa dahi bunların hiçbir önemi yoktur.
-       * SONUÇ KESİNLİKLE: "ÖNCELİKLİ YATIRIM"dır.
-       * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer aldığından, 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Bu kapsamda asgari yatırım tutarı 1. ve 2. Bölgeler için 15.100.000 TL, 3., 4., 5. ve 6. Bölgelerde 7.500.000 TL olmalıdır."
-     - DURUM 2 (Hamle Değil + Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ ...: HAYIR" + "YÜKSEK TEKNOLOJİ YATIRIM DURUMU: EVET" ise;
-       * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte yüksek teknoloji yatırımı niteliğinde olduğundan, yatırım tutarının en az 627.450.000 TL olması kaydıyla 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Asgari yatırım tutarı en az 627.450.000 TL olması şartını sağlamaması durumunda ise Hedef yatırım olarak değerlendirilir."
-     - DURUM 3 (Hamle Değil + Orta-Yüksek Teknoloji): "TEKNOLOJİ HAMLESİ ...: HAYIR" + "ORTA-YÜKSEK TEKNOLOJİ YATIRIM DURUMU: EVET" ise;
-       * Yanıt: "Teknoloji Hamlesi Programı kapsamında yer almamakla birlikte orta-yüksek teknoloji yatırımı niteliğinde olduğundan, İstanbul ili dışında gerçekleştirilmesi ve yatırım tutarının en az 1.254.900.000 TL olması kaydıyla 9903 sayılı Karar kapsamında öncelikli yatırım olarak değerlendirilir. Asgari yatırım tutarı en az 1.254.900.000 TL olması şartını sağlamaması durumunda ise Hedef yatırım olarak değerlendirilir."
-     - DURUM 4 (Diğer): Yukarıdaki şartlar sağlanmıyorsa dökümandaki ham "HEDEF" veya "ÖNCELİKLİ" etiketlerini kullanın.
-     - [YASAKLI DAVRANIŞ]: Teknoloji Hamlesi EVET olan bir yatırıma asla "Hedef yatırım olarak değerlendirilir" veya "Öncelikli yatırım değildir" demeyin. 9903 mevzuatı gereği Hamle Programı her zaman Öncelikli Yatırım sayılır. Yanıtınızı KESİNLİKLE bu şablonlara göre oluşturun.
-  4. İl Belirtilmemişse: Asgari yatırım tutarlarını bölge bazında listele ve ilini sor.
-  5. İl Belirtilmişse: İlin bölgesini tespit et ve sadece o bölgeye ait asgari yatırım tutarını yaz.
-  6. Birden fazla NACE kodu eşleşirse (hiyerarşik alt dallar gibi), bunları bir liste veya hiyerarşik yapıda özetleyerek kullanıcıya en uygun olanı seçebileceği bir sunum yap.
-  7. Asgari Yatırım Tutarları [KRİTİK]: Dökümanda bölge numaraları "1. Bölge...", "2. Bölge...", "3. Bölge..." şeklinde sıralıdır. Bu numaralara KESİNLİKLE sadık kalın. 
-     - HATA ÖNLEME: Tüm bölgeleri "1. Bölge" olarak yazmayın. Her bölgenin kendi numarasını (1'den 6'ya kadar) kullandığınızdan emin olun.
-     - GRUPLAMA: Aynı tutara sahip olan bölgeleri "1. ve 2. Bölgeler: 15.100.000 TL", "3, 4, 5 ve 6. Bölgeler: 7.500.000 TL" şeklinde birleştirerek yazın.
-     - DİKKAT: Bölge rakamlarının dökümandaki karşılığını (1, 2, 3, 4, 5, 6) tek tek kontrol edin.
-- [HIT-30 ÖZEL KURALLARI]
-  1. Kullanıcı aktif veya kapalı/sona ermiş çağrıları sorduğunda, bağlamdaki DURUM etiketlerine (AKTİF/KAPALI) KESİNLİKLE uyun.
-  2. Bir çağrının (Örn: HIT-Solar) kapalı olduğu belirtilmişse, "Bilgi yok" demek yerine dökümandaki o çağrıya ait bilgileri kullanarak "Bu çağrı sona ermiştir" bilgisini verin.
-- Çıktı Formatı: Yanıtlarını Markdown formatında, maddeler halinde ve önemli terimleri **kalın** yaparak yapılandır.
+6. BÖLÜM: ÇIKTI FORMATI [EMİR]
+- Her zaman Markdown kullanın. Kritik ifadeleri **kalın** yapın.
+- Atıf Yap: Bilginin sonuna [Kaynak: Dosya Adı] ekle.
 
 [BAĞLAM]
 ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
@@ -368,7 +345,7 @@ ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
                     { role: "system", content: systemPrompt },
                     { role: "user", content: message }
                 ],
-                temperature: 0.3,
+                temperature: 0.1, // Lower temperature for more consistency
             });
             reply = completion.choices[0].message.content || "";
         } else if (activeModel.startsWith("gemini-")) {
@@ -380,46 +357,35 @@ ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
                     { role: "user", parts: [{ text: systemPrompt + "\n\nKullanıcı Sorusu: " + message }] }
                 ],
                 generationConfig: {
-                    temperature: 0.3,
+                    temperature: 0.1,
                 }
             });
             reply = result.response.text();
         } else {
-            // Assume Ollama for local models
-            try {
-                const ollamaUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
-                const response = await fetch(`${ollamaUrl}/api/chat`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: activeModel,
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: message }
-                        ],
-                        stream: false,
-                        options: {
-                            temperature: 0.3
-                        }
-                    }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    reply = data.message?.content || "";
-                } else {
-                    throw new Error(`Ollama error: ${response.statusText}`);
-                }
-            } catch (ollamaErr) {
-                console.error("Local model error:", ollamaErr);
-                reply = "Lokal model (Ollama) ile bağlantı kurulamadı. Lütfen Ollama'nın çalıştığından ve modelin indirildiğinden emin olun.";
+            // Ollama
+            const ollamaUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+            const response = await fetch(`${ollamaUrl}/api/chat`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: activeModel,
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: message }
+                    ],
+                    stream: false,
+                    options: { temperature: 0.1 }
+                }),
+            });
+            if (response.ok) {
+                const data = await response.json();
+                reply = data.message.content;
             }
         }
 
         return NextResponse.json({ reply });
-
-    } catch (error: unknown) {
-        console.error("Chat Error:", error);
-        return NextResponse.json({ error: error instanceof Error ? error.message : "Internal Server Error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Chat API error:", error);
+        return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
     }
 }

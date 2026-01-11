@@ -68,7 +68,7 @@ export default function Navbar() {
         </button>
 
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
             <Bot size={22} />
           </div>
           <span className="font-bold text-lg md:text-xl tracking-tight text-foreground">
@@ -163,7 +163,7 @@ export default function Navbar() {
         ) : (
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-primary text-white text-[10px] font-bold px-3 py-2 rounded-lg hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 whitespace-nowrap"
+            className="flex items-center gap-2 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-2 rounded-lg hover:opacity-90 shadow-lg shadow-primary/20 transition-all active:scale-95 whitespace-nowrap"
           >
             <LogIn size={13} />
             <span className="md:hidden">GİRİŞ</span>

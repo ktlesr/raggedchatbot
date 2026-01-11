@@ -19,10 +19,13 @@ import {
   ExternalLink,
   Settings,
   BrainCircuit,
+  Layout,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useAesthetic } from "@/lib/context/AestheticContext";
 
 interface Stats {
   pages: number;
@@ -52,17 +55,20 @@ interface AdminData {
   feedbacks: any[];
   settings: {
     activeModel: string;
+    aesthetic: string;
   };
   stats: {
     totalDocs: number;
     totalChunks: number;
     totalUsers: number;
     totalFeedback: number;
+    activeUsers: number;
   };
 }
 
 export default function AdminPage() {
   const { data: session, status } = useSession();
+  const { aesthetic, setAesthetic } = useAesthetic();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<Tab>("inventory");
   const [adminData, setAdminData] = useState<AdminData | null>(null);
@@ -715,7 +721,70 @@ export default function AdminPage() {
           </div>
         )}
         {activeTab === "settings" && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto space-y-8">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl mx-auto space-y-12">
+            {/* Aesthetic Selection */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Monitor size={28} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">Görünüm ve Estetik</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Uygulamanın genel tasarım dilini seçin.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  {
+                    id: "default",
+                    name: "Varsayılan (Modern)",
+                    desc: "Yumuşak hatlar, modern gradyanlar ve geniş boşluklar.",
+                    icon: Layout,
+                  },
+                  {
+                    id: "regulatory",
+                    name: "Regulatory Dashboard",
+                    desc: "Sober, veri odaklı, disiplinli boşluklar ve yüksek okunabilirlik.",
+                    icon: ShieldCheck,
+                  },
+                ].map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => {
+                      setAesthetic(a.id as any);
+                      updateSetting("aesthetic", a.id);
+                    }}
+                    className={cn(
+                      "flex items-start gap-4 p-5 rounded-3xl border-2 transition-all text-left group",
+                      (adminData?.settings?.aesthetic || aesthetic) === a.id
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-border hover:border-primary/30 bg-secondary/20",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "p-3 rounded-2xl shrink-0 transition-colors",
+                        aesthetic === a.id
+                          ? "bg-primary text-white"
+                          : "bg-card text-muted-foreground group-hover:text-primary",
+                      )}
+                    >
+                      <a.icon size={24} />
+                    </div>
+                    <div>
+                      <span className="font-bold text-lg block">{a.name}</span>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {a.desc}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="bg-card border border-border rounded-4xl p-8 shadow-xl shadow-black/5 space-y-8">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">

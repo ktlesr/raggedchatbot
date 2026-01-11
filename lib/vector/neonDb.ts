@@ -1,12 +1,9 @@
-
 import { neon } from '@neondatabase/serverless';
 
+export const sql = neon(process.env.DATABASE_URL!);
+
 function getSql() {
-  if (!process.env.DATABASE_URL) {
-    // We only throw if we are actually trying to use the DB
-    throw new Error('DATABASE_URL is not defined. Please set it in your environment variables.');
-  }
-  return neon(process.env.DATABASE_URL);
+  return sql;
 }
 
 // Function to store embeddings

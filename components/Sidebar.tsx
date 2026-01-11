@@ -54,7 +54,7 @@ export default function Sidebar() {
       <div className="px-4 mb-6 mt-6">
         <button
           onClick={handleNewSession}
-          className="w-full h-12 rounded-xl bg-slate-900 dark:bg-primary text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-[0.98] shadow-md"
+          className="w-full h-12 rounded-xl bg-slate-900 dark:bg-primary text-white dark:text-primary-foreground font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-all active:scale-[0.98] shadow-md"
         >
           <Plus size={16} />
           Yeni Sohbet
@@ -121,7 +121,7 @@ export default function Sidebar() {
           className={cn(
             "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
             pathname === "/chat"
-              ? "bg-primary text-white text-center shadow-primary/20"
+              ? "bg-primary text-primary-foreground text-center shadow-primary/20"
               : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
           )}
         >
@@ -134,7 +134,7 @@ export default function Sidebar() {
             className={cn(
               "w-full h-11 px-4 rounded-xl flex items-center gap-3 font-medium transition-all shadow-sm",
               pathname === "/admin"
-                ? "bg-primary text-white text-center shadow-primary/20"
+                ? "bg-primary text-primary-foreground text-center shadow-primary/20"
                 : "text-muted-foreground hover:bg-secondary hover:text-foreground border border-transparent",
             )}
           >

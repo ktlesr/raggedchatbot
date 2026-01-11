@@ -45,3 +45,16 @@ export interface DocumentChunk {
   text: string;
   metadata: ChunkMetadata;
 }
+
+export function normalizeTurkish(text: string): string {
+  return text
+    .replace(/İ/g, 'i')
+    .replace(/I/g, 'ı')
+    .replace(/Ğ/g, 'ğ')
+    .replace(/Ü/g, 'ü')
+    .replace(/Ş/g, 'ş')
+    .replace(/Ö/g, 'ö')
+    .replace(/Ç/g, 'ç')
+    .toLowerCase()
+    .trim();
+}
