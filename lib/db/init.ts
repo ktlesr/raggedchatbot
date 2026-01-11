@@ -47,4 +47,8 @@ async function initDb() {
   console.log("Tables created successfully.");
 }
 
-initDb().catch(console.error);
+if (process.env.DATABASE_URL) {
+  initDb().catch(console.error);
+} else {
+  console.log("Skipping DB init: DATABASE_URL not found (Build time?)");
+}

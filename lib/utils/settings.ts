@@ -9,8 +9,17 @@ export type ChatModel =
 
 const DEFAULT_MODEL: ChatModel = "gpt-4o";
 
+function getSafeSql() {
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    return null;
+  }
+  return neon(dbUrl);
+}
+
 export async function getActiveModel(): Promise<ChatModel> {
-  const sql = neon(process.env.DATABASE_URL!);
+  const sql = getSafeSql();
+  if (!sql) return DEFAULT_MODEL;
   try {
     // Ensure table exists
     await sql`
@@ -35,7 +44,8 @@ export async function getActiveModel(): Promise<ChatModel> {
 }
 
 export async function setActiveModel(model: ChatModel) {
-  const sql = neon(process.env.DATABASE_URL!);
+  const sql = getSafeSql();
+  if (!sql) return;
   await sql`
     INSERT INTO site_settings (key, value)
     VALUES ('active_model', ${model})
@@ -44,7 +54,8 @@ export async function setActiveModel(model: ChatModel) {
 }
 
 export async function getActiveAesthetic(): Promise<string> {
-  const sql = neon(process.env.DATABASE_URL!);
+  const sql = getSafeSql();
+  if (!sql) return "default";
   try {
     const result = await sql`SELECT value FROM site_settings WHERE key = 'aesthetic' LIMIT 1`;
     if (result.length > 0) {
@@ -60,7 +71,8 @@ export async function getActiveAesthetic(): Promise<string> {
 }
 
 export async function setActiveAesthetic(aesthetic: string) {
-  const sql = neon(process.env.DATABASE_URL!);
+  const sql = getSafeSql();
+  if (!sql) return;
   await sql`
     INSERT INTO site_settings (key, value)
     VALUES ('aesthetic', ${aesthetic})

@@ -1,9 +1,17 @@
 import { neon } from '@neondatabase/serverless';
 
-export const sql = neon(process.env.DATABASE_URL!);
+const dbUrl = process.env.DATABASE_URL || '';
+export const sql = dbUrl ? neon(dbUrl) : (() => {
+  console.warn("Database connection attempted without DATABASE_URL");
+  throw new Error("Missing DATABASE_URL");
+}) as unknown as ReturnType<typeof neon>;
 
 function getSql() {
-  return sql;
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error("DATABASE_URL is not defined");
+  }
+  return neon(url);
 }
 
 // Function to store embeddings

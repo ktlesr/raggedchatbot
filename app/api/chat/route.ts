@@ -5,6 +5,8 @@ import { sql } from '@/lib/vector/neonDb';
 import { getEmbedding } from '@/lib/vector/embeddings';
 import { normalizeTurkish } from '@/lib/utils/structuredData';
 
+export const dynamic = 'force-dynamic';
+
 // Types for search results
 interface SearchResult {
     id: string;
@@ -126,7 +128,7 @@ async function findRelevantContext(query: string, openai: OpenAI) {
                     AND metadata->>'source' = 'sector_search2.txt'
                     ORDER BY metadata->>'madde_no' ASC
                     LIMIT 10;
-                `;
+                ` as any[];
                 if (nearRows.length > 0) {
                     const relatedHits = (nearRows as unknown as DbRow[]).map((r) => ({
                         id: r.id,
@@ -384,8 +386,11 @@ ${context || "Mevzuat belgelerinde bu konuda spesifik bir bilgi bulunamadı."}
         }
 
         return NextResponse.json({ reply });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Chat API error:", error);
-        return NextResponse.json({ error: error.message || "Something went wrong" }, { status: 500 });
+        return NextResponse.json(
+            { error: error instanceof Error ? error.message : "Something went wrong" },
+            { status: 500 }
+        );
     }
 }
