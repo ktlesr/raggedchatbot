@@ -8,7 +8,6 @@ import {
   Monitor,
   Moon,
   Sun,
-  Bot,
   Trash2,
   LogOut as LogOutIcon,
 } from "lucide-react";
@@ -18,6 +17,13 @@ import { cn } from "@/lib/utils/cn";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+
+interface CustomUser {
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+}
 
 export default function Sidebar() {
   const {
@@ -29,7 +35,10 @@ export default function Sidebar() {
   } = useSessions();
   const { theme, setTheme } = useTheme();
   const { data: session } = useSession();
-  const isAdmin = (session?.user as any)?.role === "admin";
+
+  const user = session?.user as CustomUser;
+  const isAdmin = user?.role === "admin";
+
   const pathname = usePathname();
   const router = useRouter();
 
@@ -41,7 +50,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-72 h-screen flex flex-col bg-card border-r border-border shrink-0 z-50 transition-colors duration-300">
+    <div className="w-72 h-full flex flex-col bg-card border-r border-border shrink-0 z-50 transition-colors duration-300 overflow-hidden">
       {/* New Session Button */}
       <div className="px-4 mb-6 mt-6">
         <button
@@ -145,27 +154,23 @@ export default function Sidebar() {
             showSettings && "border-primary shadow-md ring-2 ring-primary/10",
           )}
         >
-          {session?.user?.image ? (
+          {user?.image ? (
             <img
-              src={session.user.image}
-              alt={session.user.name || "User"}
+              src={user.image}
+              alt={user.name || "User"}
               className="w-10 h-10 rounded-full object-cover border border-border"
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold shadow-inner uppercase">
-              {session?.user?.name?.[0] || session?.user?.email?.[0] || "U"}
+              {user?.name?.[0] || user?.email?.[0] || "U"}
             </div>
           )}
           <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-semibold truncate text-foreground">
-              {session?.user?.name ||
-                session?.user?.email?.split("@")[0] ||
-                "Giriş Yapılmadı"}
+              {user?.name || user?.email?.split("@")[0] || "Giriş Yapılmadı"}
             </p>
             <p className="text-[10px] text-emerald-500 font-bold tracking-tight uppercase">
-              {(session?.user as any)?.role === "admin"
-                ? "YÖNETİCİ"
-                : "AKTİF KULLANICI"}
+              {user?.role === "admin" ? "YÖNETİCİ" : "AKTİF KULLANICI"}
             </p>
           </div>
           <div

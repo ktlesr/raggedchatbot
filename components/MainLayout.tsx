@@ -33,7 +33,7 @@ export default function MainLayout({
 
           <div
             className={`
-            fixed md:relative z-50 h-full transition-transform duration-300 ease-in-out
+            absolute md:relative z-50 h-full transition-transform duration-300 ease-in-out
             ${
               isSidebarOpen
                 ? "translate-x-0"
