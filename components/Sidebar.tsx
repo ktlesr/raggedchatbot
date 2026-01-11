@@ -33,6 +33,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
 
+  const [showSettings, setShowSettings] = React.useState(false);
+
   const handleNewSession = () => {
     createSession();
     if (pathname !== "/chat") router.push("/chat");
@@ -40,16 +42,6 @@ export default function Sidebar() {
 
   return (
     <div className="w-72 h-screen flex flex-col bg-card border-r border-border shrink-0 z-50 transition-colors duration-300">
-      {/* Logo */}
-      {/* <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <Bot size={14} />
-        </div>
-        <span className="font-bold text-md tracking-tight text-foreground">
-          TESVİKSOR AI
-        </span>
-      </div> */}
-
       {/* New Session Button */}
       <div className="px-4 mb-6 mt-6">
         <button
@@ -145,8 +137,14 @@ export default function Sidebar() {
       </div>
 
       {/* User & Theme Footer */}
-      <div className="p-4 bg-secondary/30 border-t border-border">
-        <div className="flex items-center gap-3 p-2 rounded-xl bg-card border border-border">
+      <div className="p-4 bg-secondary/30 border-t border-border space-y-3">
+        <button
+          onClick={() => setShowSettings(!showSettings)}
+          className={cn(
+            "w-full flex items-center gap-3 p-2 rounded-xl bg-card border border-border transition-all hover:border-primary/50",
+            showSettings && "border-primary shadow-md ring-2 ring-primary/10",
+          )}
+        >
           {session?.user?.image ? (
             <img
               src={session.user.image}
@@ -158,7 +156,7 @@ export default function Sidebar() {
               {session?.user?.name?.[0] || session?.user?.email?.[0] || "U"}
             </div>
           )}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left">
             <p className="text-sm font-semibold truncate text-foreground">
               {session?.user?.name ||
                 session?.user?.email?.split("@")[0] ||
@@ -170,53 +168,82 @@ export default function Sidebar() {
                 : "AKTİF KULLANICI"}
             </p>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-muted-foreground hover:text-destructive p-1 transition-colors"
+          <div
+            className={cn(
+              "transition-transform duration-300",
+              showSettings ? "rotate-180" : "rotate-0",
+            )}
           >
-            <LogOutIcon size={18} />
-          </button>
-        </div>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+          </div>
+        </button>
 
-        {/* Theme Switcher */}
-        <div className="flex items-center justify-between gap-1 mt-3 p-1 bg-secondary rounded-xl border border-border">
-          <button
-            onClick={() => setTheme("light")}
-            className={cn(
-              "flex-1 flex items-center justify-center p-1.5 rounded-lg transition-all",
-              theme === "light"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            title="Light Mode"
-          >
-            <Sun size={14} />
-          </button>
-          <button
-            onClick={() => setTheme("dark")}
-            className={cn(
-              "flex-1 flex items-center justify-center p-1.5 rounded-lg transition-all",
-              theme === "dark"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            title="Dark Mode"
-          >
-            <Moon size={14} />
-          </button>
-          <button
-            onClick={() => setTheme("system")}
-            className={cn(
-              "flex-1 flex items-center justify-center p-1.5 rounded-lg transition-all",
-              theme === "system"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            title="System Mode"
-          >
-            <Monitor size={14} />
-          </button>
-        </div>
+        {/* Expandable Settings Menu */}
+        {showSettings && (
+          <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            {/* Theme Switcher */}
+            <div className="flex items-center justify-between gap-1 p-1 bg-card rounded-xl border border-border">
+              <button
+                onClick={() => setTheme("light")}
+                className={cn(
+                  "flex-1 flex items-center justify-center p-2 rounded-lg transition-all",
+                  theme === "light"
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                title="Aydınlık"
+              >
+                <Sun size={14} />
+              </button>
+              <button
+                onClick={() => setTheme("dark")}
+                className={cn(
+                  "flex-1 flex items-center justify-center p-2 rounded-lg transition-all",
+                  theme === "dark"
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                title="Karanlık"
+              >
+                <Moon size={14} />
+              </button>
+              <button
+                onClick={() => setTheme("system")}
+                className={cn(
+                  "flex-1 flex items-center justify-center p-2 rounded-lg transition-all",
+                  theme === "system"
+                    ? "bg-primary/10 text-primary shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+                title="Sistem"
+              >
+                <Monitor size={14} />
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem("rag_sessions");
+                signOut({ callbackUrl: "/login" });
+              }}
+              className="w-full flex items-center justify-center gap-2 p-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold hover:bg-destructive/20 transition-all uppercase tracking-widest border border-destructive/10"
+            >
+              <LogOutIcon size={14} />
+              Oturumu Kapat
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

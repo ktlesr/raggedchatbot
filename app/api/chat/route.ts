@@ -120,7 +120,7 @@ async function findRelevantContext(query: string, openai: OpenAI) {
                 const parts = normalizedNace.split('.');
                 const searchPrefix = parts[0] + (parts[1] ? '.' + parts[1].substring(0, 1) : '');
 
-                const nearRows = await sql`
+                const nearRows = (await sql`
                     SELECT id, content, metadata
                     FROM rag_documents 
                     WHERE (metadata->>'madde_no' LIKE ${`${searchPrefix}%`}
@@ -128,9 +128,9 @@ async function findRelevantContext(query: string, openai: OpenAI) {
                     AND metadata->>'source' = 'sector_search2.txt'
                     ORDER BY metadata->>'madde_no' ASC
                     LIMIT 10;
-                ` as any[];
+                `) as unknown as DbRow[];
                 if (nearRows.length > 0) {
-                    const relatedHits = (nearRows as unknown as DbRow[]).map((r) => ({
+                    const relatedHits = nearRows.map((r) => ({
                         id: r.id,
                         content: `[ÖNERİ / BENZER KOD] ${r.content}`,
                         source: r.metadata?.source

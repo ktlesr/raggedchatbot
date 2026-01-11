@@ -268,7 +268,7 @@ export default function ChatInterface() {
           {loading || isTyping ? (
             <button
               onClick={stopGenerating}
-              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center gap-2 transition-all active:scale-95 bg-destructive text-white shadow-lg shadow-destructive/30 hover:opacity-90 animate-in zoom-in-95"
+              className="absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95 bg-destructive text-white shadow-lg shadow-destructive/30 hover:opacity-90 animate-in zoom-in-95"
             >
               <Square size={16} fill="white" />
               <span className="hidden xs:inline">DURDUR</span>
@@ -278,13 +278,13 @@ export default function ChatInterface() {
               onClick={sendMessage}
               disabled={!input.trim() || loading}
               className={cn(
-                "absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center gap-2 transition-all active:scale-95",
+                "absolute right-2 md:right-3 top-1/2 -translate-y-1/2 h-10 md:h-12 px-4 md:px-6 rounded-xl md:rounded-2xl font-bold text-xs md:text-sm tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95",
                 input.trim()
                   ? "bg-primary text-white shadow-lg shadow-primary/30 hover:opacity-90"
                   : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed",
               )}
             >
-              <Send size={16} />
+              <Send size={20} />
               <span className="hidden xs:inline">SOR</span>
             </button>
           )}

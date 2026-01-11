@@ -88,7 +88,7 @@ export default function Navbar() {
       </div>
 
       <div className="flex items-center gap-2 md:gap-4">
-        {/* Theme Switcher Mini - Hidden on Mobile */}
+        {/* Theme Switcher Mini - Desktop Only */}
         <div className="hidden md:flex items-center bg-secondary/50 rounded-lg p-0.5 border border-border">
           <button
             onClick={() => setTheme("light")}
@@ -128,7 +128,22 @@ export default function Navbar() {
           </button>
         </div>
 
-        <div className="hidden md:block h-4 w-px bg-border mx-1" />
+        {/* Theme Toggle - Mobile Only */}
+        <button
+          onClick={() => {
+            if (theme === "light") setTheme("dark");
+            else if (theme === "dark") setTheme("system");
+            else setTheme("light");
+          }}
+          className="flex md:hidden items-center justify-center w-9 h-9 rounded-xl bg-secondary border border-border text-primary shadow-sm active:scale-90 transition-all"
+          title="Temayı Değiştir"
+        >
+          {theme === "light" && <Sun size={18} />}
+          {theme === "dark" && <Moon size={18} />}
+          {theme === "system" && <Monitor size={18} />}
+        </button>
+
+        <div className="h-4 w-px bg-border mx-1 hidden md:block" />
 
         {/* Auth / Inventory */}
         {status === "authenticated" ? (
